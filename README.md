@@ -1,8 +1,5 @@
-# helloworld
-
-AstrBot 插件模板
-
-A template plugin for AstrBot plugin feature
+# moreapi，一款各类api调用插件
+@bot发【/api】查看菜单
 
 # 支持
 
