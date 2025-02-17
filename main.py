@@ -16,7 +16,7 @@ from PIL import Image as PILImage
 
 @register("astrbot_plugin_moreapi", "达莉娅",
           "各种api调用【/api】看菜单",
-          "v1.0.0")
+          "v1.0.1")
 class MyPlugin(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -154,7 +154,7 @@ class MyPlugin(Star):
         data = self.get_weather(num)
         chain = []
         if isinstance(data, dict):
-            chain.append(Plain(f"Weather Data for {data.get("city")}\n"))
+            chain.append(Plain(f"Weather Data for {data.get('city')}\n"))
             chain.append(Plain(f"Temperature: {data.get('temp')}\n"))
             chain.append(Plain(f"Weather: {data.get('weather')}\n"))
             chain.append(Plain(f"Wind: {data.get('wind')}\n"))
