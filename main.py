@@ -1,22 +1,24 @@
+import urllib.request
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 from astrbot.api.all import *
-import inspect
-from pathlib import Path
-from openai import OpenAI
-import base64
+import requests
+from typing import List, Dict, Optional
+import os
+import json
+from urllib.parse import quote
+from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
+from astrbot.api.all import *
 import os
 from queue import Queue
 import requests
-from astrbot.core.provider.entites import LLMResponse
-import re
 from PIL import ImageDraw, ImageFont, ImageOps
 from PIL import Image as PILImage
 
 @register("astrbot_plugin_moreapi", "达莉娅",
           "各种api调用【/api】看菜单",
-          "v1.0.1")
+          "v1.1.0")
 class MyPlugin(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -24,6 +26,12 @@ class MyPlugin(Star):
         self.counter = 0
         self.enabled = True
         self.config = config
+        self.base_url = "https://arona.diyigemt.com/api/v2/image"
+        self.cdn_base = "https://arona.cdn.diyigemt.com/image"
+        self.small_cdn_base = "https://arona.cdn.diyigemt.com/image/s"
+        self.hash_file = "./data/plugins/astrbot_plugin_moreapi/hash.json"
+        self.apt = "./data/plugins/astrbot_plugin_moreapi/"
+        self.hash1 = {}
         #self.api_name = config.get('name', 'FunAudioLLM/CosyVoice2-0.5B')
 
     '''---------------------------------------------------'''
@@ -511,6 +519,7 @@ class MyPlugin(Star):
         font = ImageFont.truetype('msyh.ttc', 24)
         menu = [
         "【MOREAPI菜单】",
+        "/ba攻略 【关键词】",
         "/光遇任务",
         "/xjj（返回随机小姐姐视频）",
         "/movie（电影票房榜单）",
@@ -536,3 +545,127 @@ class MyPlugin(Star):
         output_path = f"./data/plugins/astrbot_plugin_moreapi/pic.png"
         img.save(output_path, format='PNG')
         return output_path
+
+
+    def load_game(self):
+        if os.path.exists(self.hash_file):
+            with open(self.hash_file, 'r', encoding='utf-8') as f:
+                self.hash1 = json.load(f)
+
+    def save_game(self):
+        with open(self.hash_file, 'w', encoding='utf-8') as f:
+            json.dump(self.hash1, f, ensure_ascii=False, indent=4)
+    def process_results(self, data: List[Dict]) -> List[Dict]:
+        """处理API返回结果"""
+        processed = []
+        for item in data:
+            if item["type"] == "file":
+                processed.append({
+                    "name": item["name"],
+                    "hash": item["hash"],
+                    "urls": f"{self.small_cdn_base}{item['content']}",
+                    "file": f"{self.apt}{item['name']}.png",
+                    "type": "image"
+                })
+            else:
+                processed.append({
+                    "name": item["name"],
+                    "hash": item["hash"],
+                    "content": item["content"],
+                    "file": f"{self.apt}{item['name']}.png",
+                    "type": "text"
+                })
+        return processed
+
+    @filter.command("ba攻略")
+    async def handle_blue_archive(self, event: AstrMessageEvent,text:str):
+        """碧蓝档案攻略查询"""
+        message_chain = event.get_message_str()
+        logger.info(message_chain)
+        self.load_game()
+        params = {
+            "name": text,
+            "size": 8,
+            "method": 3  # 默认使用混合搜索
+        }
+        api_data = {}
+        # 调用API
+        try:
+            response = requests.get(self.base_url, params=params, timeout=10)
+            api_data = response.json()
+        except Exception as e:
+            logger.error(f"API请求异常：{str(e)}")
+            return
+
+        if not api_data:
+            yield event.plain_result("攻略查询服务暂不可用，请稍后再试")
+            return
+
+        # 处理响应
+        chain = []
+        if api_data["code"] == 200:
+            # 精确匹配
+            results = self.process_results(api_data["data"])
+            if results:
+                best_match = results[0]
+                chain.append(Plain(f"找到精确匹配：{best_match['name']}\n"))
+                if best_match["type"] == "image":
+                    oldhash = self.hash1.get(best_match['name'], '')
+                    local_path = best_match["file"]
+                    if best_match["hash"] == oldhash and os.path.exists(local_path):
+                        chain.append(Image.fromFileSystem(local_path))
+                    else:
+                        url = best_match["urls"]
+                        # 对 URL 中的路径部分进行编码
+                        parsed_url = urllib.parse.urlsplit(url)
+                        encoded_path = quote(parsed_url.path)  # 编码路径部分
+                        safe_url = urllib.parse.urlunsplit(
+                            (parsed_url.scheme, parsed_url.netloc, encoded_path, parsed_url.query, parsed_url.fragment)
+                        )
+                        with urllib.request.urlopen(safe_url) as resp:
+                            data = resp.read()
+                        with open(local_path, "wb") as f:
+                            f.write(data)
+                        self.hash1[best_match['name']] = best_match['hash']
+                        self.save_game()
+                        chain.append(Image.fromURL(best_match["urls"]))  # 使用小图
+                else:
+                    chain.append(Plain(best_match["content"]))
+        elif api_data["code"] == 101:
+            # 模糊查询
+            if not api_data["data"]:
+                yield event.plain_result("没有找到相关攻略")
+                return
+            results = self.process_results(api_data["data"])
+            chain.append(Plain("找到以下相似结果：\n"))
+            for idx, item in enumerate(results, 1):
+                chain.append(Plain(f"{idx}. {item['name']}\n"))
+                if item["type"] == "image":
+                    oldhash = self.hash1.get(item['name'], '')
+                    local_path = item["file"]
+                    if item["hash"] == oldhash and os.path.exists(local_path):
+                        chain.append(Image.fromFileSystem(local_path))
+                    else:
+                        url = item["urls"]
+                        # 对 URL 中的路径部分进行编码
+                        parsed_url = urllib.parse.urlsplit(url)
+                        encoded_path = quote(parsed_url.path)  # 编码路径部分
+                        safe_url = urllib.parse.urlunsplit(
+                            (parsed_url.scheme, parsed_url.netloc, encoded_path, parsed_url.query, parsed_url.fragment)
+                        )
+                        with urllib.request.urlopen(safe_url) as resp:
+                            data = resp.read()
+                        with open(local_path, "wb") as f:
+                            f.write(data)
+                        self.hash1[item['name']] = item["hash"]
+                        self.save_game()
+                        chain.append(Image.fromURL(item["urls"]))  # 使用小图
+                else:
+                    chain.append(Plain(item["content"] + "\n"))
+                chain.append(Plain("-" * 20 + "\n"))
+            chain.append(Plain("请输入更精确的名称获取具体内容"))
+        else:
+            yield event.plain_result(f"查询失败：{api_data.get('message', '未知错误')}")
+            return
+
+        yield event.chain_result(chain)
