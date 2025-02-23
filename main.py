@@ -516,7 +516,7 @@ class MyPlugin(Star):
     def generate_menu(self):
         img = PILImage.new('RGB', (800, 800), (73, 109, 137))
         d = ImageDraw.Draw(img)
-        font = ImageFont.truetype('msyh.ttc', 24)
+        font = ImageFont.truetype('data/plugins/astrbot_plugin_moreapi/msyh.ttf', 24)
         menu = [
         "【MOREAPI菜单】",
         "/ba攻略 【关键词】",
