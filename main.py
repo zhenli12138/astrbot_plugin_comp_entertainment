@@ -1,4 +1,4 @@
-﻿import urllib.request
+import urllib.request
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
@@ -18,7 +18,7 @@ from PIL import Image as PILImage
 
 @register("astrbot_plugin_moreapi", "达莉娅",
           "自然语言进行各种api调用【/api】看菜单",
-          "v1.2.0")
+          "v1.3.0")
 class MyPlugin(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -50,7 +50,7 @@ class MyPlugin(Star):
     '''---------------------------------------------------'''
     @llm_tool("api")
     async def menu(self, event: AstrMessageEvent)-> MessageEventResult:
-        '''发送具有的所有api功能列表图片'''
+        '''Send a list image of all API features available'''
         img = self.generate_menu()
         result = event.make_result()
         result.chain = [Plain(f"MOREAPI菜单：\n"),Image.fromFileSystem(img)]
@@ -90,11 +90,9 @@ class MyPlugin(Star):
         img.save(output_path, format='PNG')
         return output_path
     '''0---------------------------------------------------'''
-    @llm_tool(name="光遇任务")
+    @llm_tool("Sky_Children_of_the_Light_mission")
     async def trap(self, event: AstrMessageEvent)-> MessageEventResult:
-        '''获取光遇任务'''
-        #message_chain = event.get_messages()  # 用户所发的消息的消息链
-        #logger.info(message_chain)
+        '''发送光遇这个游戏的每日任务'''
         data = self.fetch_daily_tasks()
         result = event.make_result()
         result.chain = [Plain(f"Nowtime: {data['nowtime']}\n")]
@@ -127,7 +125,7 @@ class MyPlugin(Star):
             logger.error(f"Failed to fetch data. Status code: {response.status_code}")
 
     '''1---------------------------------------------------'''
-    @llm_tool("小姐姐视频")
+    @llm_tool("Little_Sister_Video")
     async def trap1(self, event: AstrMessageEvent)-> MessageEventResult:
         '''发送小姐姐视频/美女视频/抖音视频'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
@@ -157,9 +155,9 @@ class MyPlugin(Star):
             print(f"请求失败，状态码: {response.status_code}")
             return None
     '''2---------------------------------------------------'''
-    @llm_tool("电影票房")
+    @llm_tool("box_office")
     async def trap2(self, event: AstrMessageEvent)-> MessageEventResult:
-        '''发送电影票房排行榜单'''
+        '''发送电影票房排行榜单,当用户需要电影票房排行榜单时调用此工具'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
         logger.info(message_chain)
         data = self.movie()
@@ -183,7 +181,7 @@ class MyPlugin(Star):
             print(f"请求失败，状态码: {response.status_code}")
 
     '''3---------------------------------------------------'''
-    @llm_tool("b站番剧更新表")
+    @llm_tool("Bilibili_Drama_Update_Table")
     async def trap3(self, event: AstrMessageEvent,num:str)-> MessageEventResult:
         '''发送b站番剧更新表
             Args:num(string): 发送的列表内的元素内容
@@ -205,7 +203,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''4---------------------------------------------------'''
-    @llm_tool("cosplay图片")
+    @llm_tool("cosplay_image")
     async def trap4(self, event: AstrMessageEvent)-> MessageEventResult:
         '''发送cosplay图片'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
@@ -220,7 +218,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''5---------------------------------------------------'''
-    @llm_tool("翻译")
+    @llm_tool("translate")
     async def trap5(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
         '''翻译用户提供的内容文字（翻译为英文）
         Args:a(string): 用户提供的内容文字（即需要翻译的内容）
@@ -231,7 +229,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''6---------------------------------------------------'''
-    @llm_tool("随机段子")
+    @llm_tool("Random_paragraph")
     async def trap6(self, event: AstrMessageEvent)-> MessageEventResult:
         '''发送一段随机的段子'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
@@ -242,7 +240,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''7---------------------------------------------------'''
-    @llm_tool("搜图")
+    @llm_tool("Search_for_pictures")
     async def trap7(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
         '''对用户给出的关键词使用搜狗搜索引擎进行搜图操作
         Args:a(string): 用户给出的关键词'''
@@ -252,7 +250,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''8---------------------------------------------------'''
-    @llm_tool("天气")
+    @llm_tool("weather")
     async def trap8(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
         '''查询用户给出的地点的天气情况
         Args:a(string): 用户给出的地点，如北京/上海/重庆/深圳，等等'''
@@ -270,7 +268,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''9---------------------------------------------------'''
-    @llm_tool("毒鸡汤")
+    @llm_tool("Poisonous_Chicken_Soup")
     async def trap9(self, event: AstrMessageEvent)-> MessageEventResult:
         '''发送一段毒鸡汤文字内容'''
         data = self.get_dujitang()
@@ -279,7 +277,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''---------------------------------------------------'''
-    @llm_tool("头像框")
+    @llm_tool("Avatar_Frame")
     async def trap10(self, event: AstrMessageEvent)-> MessageEventResult:
         '''发送一张头像框图片'''
         id = self.parse_target(event)
@@ -289,7 +287,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''---------------------------------------------------'''
-    @llm_tool("小人举牌")
+    @llm_tool("Little_person_holding_a_sign")
     async def trap11(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
         '''根据用户要求的文字内容发送一张小人举牌图片
         Args:a(string): 用户要求的文字内容'''
@@ -301,7 +299,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''---------------------------------------------------'''
-    @llm_tool("音乐推荐")
+    @llm_tool("Music_recommendation")
     async def trap12(self, event: AstrMessageEvent)-> MessageEventResult:
         '''给用户发送音乐推荐内容'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
@@ -319,9 +317,9 @@ class MyPlugin(Star):
         result.chain.append(Plain(f"Nick: {data['data'].get('Nick', 'N/A')}\n"))
         return event.set_result(result)
     '''---------------------------------------------------'''
-    @llm_tool("随机原神")
+    @llm_tool("Random_Genshin_Impact_pictures")
     async def trap13(self, event: AstrMessageEvent)-> MessageEventResult:
-        '''发送一张随机的原神的图片'''
+        '''发送一张随机的关于原神的图片'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
         logger.info(message_chain)
         data = self.call_api()
@@ -330,7 +328,7 @@ class MyPlugin(Star):
         # 将结果添加到 chain 中
         return event.set_result(result)
     '''---------------------------------------------------'''
-    @llm_tool("随机龙图")
+    @llm_tool("Random_Dragon_Chart")
     async def trap14(self, event: AstrMessageEvent)-> MessageEventResult:
         '''发送一张随机的‘龙图’'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
@@ -341,7 +339,7 @@ class MyPlugin(Star):
         return event.set_result(result)
 
     '''---------------------------------------------------'''
-    @llm_tool("温柔语录")
+    @llm_tool("Gentle_quotes")
     async def trap15(self, event: AstrMessageEvent)-> MessageEventResult:
         '''发送一段温柔语录的文字内容'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
@@ -351,7 +349,7 @@ class MyPlugin(Star):
         result.chain = [Plain(f"温柔语录：{data}")]
         return event.set_result(result)
     '''---------------------------------------------------'''
-    @llm_tool("手写图文")
+    @llm_tool("Handwritten_text_to_images")
     async def trap114(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
         '''根据用户要求的文字内容发送一张手写的该文字内容的图片
         Args:a(string): 用户要求的文字内容'''
@@ -382,7 +380,7 @@ class MyPlugin(Star):
 
     '''---------------------------------------------------'''
 
-    @llm_tool("ai绘图")
+    @llm_tool("ai_drawing")
     async def trap112(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
         '''根据用户提供的关键词发送一张根据关键词的ai绘图的图片
         Args:a(string): 用户要求的关键词'''
@@ -426,7 +424,7 @@ class MyPlugin(Star):
         except requests.exceptions.RequestException as e:
             print(f"请求异常: {e}")
     '''---------------------------------------------------'''
-    @llm_tool("碧蓝档案攻略查询/ba攻略查询/攻略查询")
+    @llm_tool("Blue_Archive_Strategy_Search")
     async def handle_blue_archive(self, event: AstrMessageEvent,text:str)-> MessageEventResult:
         '''根据用户提供的关键词进行碧蓝档案攻略查询
         Args:text(string): 用户要求的关键词，比如‘国际服’'''
