@@ -828,7 +828,7 @@ class MyPlugin(Star):
         }
         try:
             # 发送GET请求
-            response = requests.get(url)
+            response = requests.get(url,params=params)
             data = response
             return data
         except requests.exceptions.RequestException as e:
