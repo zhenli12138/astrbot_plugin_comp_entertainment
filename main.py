@@ -829,8 +829,7 @@ class MyPlugin(Star):
         try:
             # 发送GET请求
             response = requests.get(url,params=params)
-            data = response
-            return data
+            return response.text
         except requests.exceptions.RequestException as e:
             print(f"请求异常: {e}")
             return ''
