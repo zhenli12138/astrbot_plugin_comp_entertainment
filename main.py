@@ -56,49 +56,50 @@ class MyPlugin(Star):
     请务必按照以下格式编写一个工具（包括函数注释，AstrBot 会尝试解析该函数注释）'''
     '''---------------------------------------------------'''
     @filter.command("api")
-    async def menu(self, event: AstrMessageEvent)-> MessageEventResult:
+    async def menu(self, event: AstrMessageEvent):
         img = "./data/plugins/astrbot_plugin_moreapi/menu_output.png"
         if not os.path.exists(img):
             result = api.get_menu()
         else:
             result = event.make_result()
             result.chain = [Plain(f"MOREAPI菜单：\n"), Image.fromFileSystem(img)]
-        return event.set_result(result)
+        await event.send(result)
+
     @filter.command("emoji合成")
-    async def trap1564637(self, event: AstrMessageEvent, emoji1: str, emoji2: str) -> MessageEventResult:
+    async def trap1564637(self, event: AstrMessageEvent, emoji1: str, emoji2: str):
         result = emoji.mix_emojis(emoji1, emoji2)
-        return event.set_result(result)
+        await event.send(result)
     @filter.command("ikun图片")
-    async def trap1666667(self, event: AstrMessageEvent, lx: str = "bqb") -> MessageEventResult:
+    async def trap1666667(self, event: AstrMessageEvent, lx: str = "bqb"):
         '''Args:lx(string): 图片类型，可选 bqb（表情包）或 tx（头像），默认为 bqb'''
         result = ikun.get_ikun_image(lx)
-        return event.set_result(result)
+        await event.send(result)
     @filter.command("原神cosplay")
-    async def trap177776(self, event: AstrMessageEvent) -> MessageEventResult:
+    async def trap177776(self, event: AstrMessageEvent):
         result = cosplay1.get_random_genshin_cosplay()
-        return event.set_result(result)
+        await event.send(result)
     @filter.command("搜索音乐")
-    async def trap13433337(self, event: AstrMessageEvent, song_name: str, n: Optional[str] = None) -> MessageEventResult:
+    async def trap13433337(self, event: AstrMessageEvent, song_name: str, n: Optional[str] = None):
         '''Args:song_name (string): 歌曲名/n (string, optional): 选择对应的歌曲序号，为空返回列表（用户没给出则默认为空，无需要求）'''
         self.song_name = song_name
         result = music.search_music(song_name, n)
-        return event.set_result(result)
+        await event.send(result)
     @filter.command("音乐")
-    async def trap137(self, event: AstrMessageEvent,n: int) -> MessageEventResult:
+    async def trap137(self, event: AstrMessageEvent,n: int):
         result = music.search_music(self.song_name, n)
         url = music.search_music2()
         det = self.generate_music(url)
         voice = MessageChain()
         voice.chain.append(Record(file=det))
         await event.send(voice)
-        return event.set_result(result)
+        await event.send(result)
     @filter.command("网页截图")
-    async def trap11237(self, event: AstrMessageEvent, url: str) -> MessageEventResult:
+    async def trap11237(self, event: AstrMessageEvent, url: str):
         '''Args:url(string): 用户提供的网页URL，可以模糊判断'''
         result = web_screenshot.get_webpage_screenshot(url)
-        return event.set_result(result)
+        await event.send(result)
     @filter.command("五子棋")
-    async def trap12311117(self, event: AstrMessageEvent, type:str = '0', x: Optional[str] = None,y: Optional[str] = None) -> MessageEventResult:
+    async def trap12311117(self, event: AstrMessageEvent, type:str = '0', x: Optional[str] = None,y: Optional[str] = None):
         '''五子棋游戏操作，用户需要五子棋游戏，提到有关五子棋时调用此工具
         Args:
             type (string): 指令(1为加入,2为退出,3为下棋,4为跳过,5为图片)
@@ -108,22 +109,22 @@ class MyPlugin(Star):
         qq = event.get_sender_id()
         group = event.get_group_id()
         result = chess1.play_gobang(qq, group, type, x, y)
-        return event.set_result(result)
+        await event.send(result)
     @llm_tool("Sky_Children_of_the_Light_mission")
-    async def trap(self, event: AstrMessageEvent)-> MessageEventResult:
+    async def trap(self, event: AstrMessageEvent):
         '''发送光遇这个游戏的每日任务，当用户需要光遇任务，提到有关光遇，光遇任务时调用此工具'''
         result = guangyu.fetch_daily_tasks()
-        return event.set_result(result)
+        await event.send(result)
     @llm_tool("Little_Sister_Video")
-    async def trap1(self, event: AstrMessageEvent)-> MessageEventResult:
+    async def trap1(self, event: AstrMessageEvent):
         '''发送小姐姐视频/美女视频/抖音视频，当用户需要小姐姐视频，提到有关小姐姐，美女视频，小姐姐视频时调用此工具'''
         result = xjj.xjj()
-        return event.set_result(result)
+        await event.send(result)
     @llm_tool("box_office")
-    async def trap2(self, event: AstrMessageEvent)-> MessageEventResult:
+    async def trap2(self, event: AstrMessageEvent):
         '''发送电影票房排行榜单,当用户需要电影票房排行榜单，提到有关电影票房时调用此工具'''
         result = movie.movie()
-        return event.set_result(result)
+        await event.send(result)
 
     '''3---------------------------------------------------'''
     @llm_tool("Bilibili_Drama_Update_Table")

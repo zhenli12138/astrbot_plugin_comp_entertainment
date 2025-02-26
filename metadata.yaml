@@ -1,6 +1,6 @@
 name: astrbot_plugin_moreapi # 这是你的插件的唯一识别名。
 desc:  自然语言调用各种api，功能超级多。问【api】看菜单，菜单仅供参考 # 插件简短描述
 help:  # 插件的帮助信息
-version: v1.5.0 # 插件版本号。格式：v1.1.1 或者 v1.1
+version: v1.5.5 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: 达莉娅 # 作者
 repo: https://github.com/zhenli12138/astrbot_plugin_moreapi
