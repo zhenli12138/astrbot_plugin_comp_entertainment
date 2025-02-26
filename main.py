@@ -5,8 +5,8 @@ from astrbot.api.event import filter
 from astrbot.api.all import *
 import os
 import requests
-from astrbot.data.plugins.astrbot_plugin_moreapi.api_collection import api, ikun, emoji, web_screenshot, cosplay1
-from astrbot.data.plugins.astrbot_plugin_moreapi.api_collection import movie, xjj, music, guangyu, chess1
+from data.plugins.astrbot_plugin_moreapi.api_collection import api, ikun, emoji, web_screenshot, cosplay1
+from data.plugins.astrbot_plugin_moreapi.api_collection import movie, xjj, music, guangyu, chess1
 
 
 @register("astrbot_plugin_moreapi", "达莉娅",
