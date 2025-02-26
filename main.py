@@ -1,30 +1,12 @@
 import urllib.request
-from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
-from astrbot.api.star import Context, Star, register
-from astrbot.api import logger
-from astrbot.api.all import *
-import requests
 from typing import List, Dict, Optional
-import os
-import json
 from urllib.parse import quote
-from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
+from astrbot.api.event import filter
 from astrbot.api.all import *
 import os
-from queue import Queue
 import requests
-from PIL import ImageDraw, ImageFont, ImageOps
-from PIL import Image as PILImage
-import time
-import api
-import web_screenshot
-import chess1
-import guangyu
-import xjj
-import movie
-import music
-import emoji
-import ikun, cosplay1
+from astrbot.data.plugins.astrbot_plugin_moreapi.api_collection import api, ikun, emoji, web_screenshot, cosplay1
+from astrbot.data.plugins.astrbot_plugin_moreapi.api_collection import movie, xjj, music, guangyu, chess1
 
 
 @register("astrbot_plugin_moreapi", "达莉娅",
