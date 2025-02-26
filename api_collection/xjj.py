@@ -1,6 +1,7 @@
 from astrbot.api.all import *
 import requests
 def xjj():
+    '''发送小姐姐视频/美女视频/抖音视频，当用户需要小姐姐视频，提到有关小姐姐，美女视频，小姐姐视频时调用此工具'''
     api_url = "https://api.kxzjoker.cn/API/Beautyvideo.php"
     params = {
         'type': 'json'

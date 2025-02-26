@@ -5,8 +5,12 @@ from astrbot.api.event import filter
 from astrbot.api.all import *
 import os
 import requests
-from data.plugins.astrbot_plugin_moreapi.api_collection import api, ikun, emoji, web_screenshot, cosplay1
-from data.plugins.astrbot_plugin_moreapi.api_collection import movie, xjj, music, guangyu, chess1
+from data.plugins.astrbot_plugin_moreapi.api_collection import api, ikun, emoji, web_screenshot, cosplay, \
+    translate, text, search
+from data.plugins.astrbot_plugin_moreapi.api_collection import xjj, music, guangyu, chess
+from astrbot.api.event import AstrMessageEvent, MessageChain
+from astrbot.api.message_components import Plain, Image, Record, At, Node, Nodes
+
 
 
 @register("astrbot_plugin_moreapi", "达莉娅",
@@ -16,7 +20,6 @@ class MyPlugin(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
         self.song_name = None
-        self.data222 = None
         self.user_background_path = "./data/plugins/astrbot_plugin_moreapi/menu.png"
         self.flag = 0
         self.data = {}
@@ -30,19 +33,8 @@ class MyPlugin(Star):
         self.apt = "./data/plugins/astrbot_plugin_moreapi/"
         self.hash1 = {}
         #self.api_name = config.get('name', 'FunAudioLLM/CosyVoice2-0.5B')
-
     '''---------------------------------------------------'''
     '''---------------------------------------------------'''
-    def generate_music(self,url):
-        response = requests.get(url)
-        # 检查请求是否成功
-        if response.status_code == 200:
-            # 保存音乐文件到本地
-            with open("./data/plugins/astrbot_plugin_moreapi/music.mp3", "wb") as file:
-                file.write(response.content)
-            return "./data/plugins/astrbot_plugin_moreapi/music.mp3"
-        else:
-            print(f"下载失败，状态码: {response.status_code}")
 
     @command("test")
     async def test(self, event: AstrMessageEvent):
@@ -64,7 +56,6 @@ class MyPlugin(Star):
             result = event.make_result()
             result.chain = [Plain(f"MOREAPI菜单：\n"), Image.fromFileSystem(img)]
         await event.send(result)
-
     @filter.command("emoji合成")
     async def trap1564637(self, event: AstrMessageEvent, emoji1: str, emoji2: str):
         result = emoji.mix_emojis(emoji1, emoji2)
@@ -76,7 +67,7 @@ class MyPlugin(Star):
         await event.send(result)
     @filter.command("原神cosplay")
     async def trap177776(self, event: AstrMessageEvent):
-        result = cosplay1.get_random_genshin_cosplay()
+        result = cosplay.get_random_genshin_cosplay()
         await event.send(result)
     @filter.command("搜索音乐")
     async def trap13433337(self, event: AstrMessageEvent, song_name: str, n: Optional[str] = None):
@@ -87,377 +78,82 @@ class MyPlugin(Star):
     @filter.command("音乐")
     async def trap137(self, event: AstrMessageEvent,n: int):
         result = music.search_music(self.song_name, n)
-        url = music.search_music2()
-        det = self.generate_music(url)
+        det = music.search_music2()
         voice = MessageChain()
         voice.chain.append(Record(file=det))
         await event.send(voice)
         await event.send(result)
     @filter.command("网页截图")
     async def trap11237(self, event: AstrMessageEvent, url: str):
-        '''Args:url(string): 用户提供的网页URL，可以模糊判断'''
         result = web_screenshot.get_webpage_screenshot(url)
         await event.send(result)
     @filter.command("五子棋")
     async def trap12311117(self, event: AstrMessageEvent, type:str = '0', x: Optional[str] = None,y: Optional[str] = None):
-        '''五子棋游戏操作，用户需要五子棋游戏，提到有关五子棋时调用此工具
-        Args:
-            type (string): 指令(1为加入,2为退出,3为下棋,4为跳过,5为图片)
-            x (string, optional): 下棋X坐标（type=3时必填）
-            y (string, optional): 下棋Y坐标（type=3时必填）
-        '''
         qq = event.get_sender_id()
         group = event.get_group_id()
-        result = chess1.play_gobang(qq, group, type, x, y)
+        result = chess.play_gobang(qq, group, type, x, y)
         await event.send(result)
-    @llm_tool("Sky_Children_of_the_Light_mission")
-    async def trap(self, event: AstrMessageEvent):
+    @filter.command("光遇任务")
+    async def trap0(self, event: AstrMessageEvent):
         '''发送光遇这个游戏的每日任务，当用户需要光遇任务，提到有关光遇，光遇任务时调用此工具'''
         result = guangyu.fetch_daily_tasks()
         await event.send(result)
-    @llm_tool("Little_Sister_Video")
+    @filter.command("小姐姐视频")
     async def trap1(self, event: AstrMessageEvent):
-        '''发送小姐姐视频/美女视频/抖音视频，当用户需要小姐姐视频，提到有关小姐姐，美女视频，小姐姐视频时调用此工具'''
         result = xjj.xjj()
         await event.send(result)
-    @llm_tool("box_office")
+    @filter.command("电影票房")
     async def trap2(self, event: AstrMessageEvent):
-        '''发送电影票房排行榜单,当用户需要电影票房排行榜单，提到有关电影票房时调用此工具'''
-        result = movie.movie()
+        result = text.movie()
         await event.send(result)
-
-    '''3---------------------------------------------------'''
-    @llm_tool("Bilibili_Drama_Update_Table")
-    async def trap3(self, event: AstrMessageEvent,num:str)-> MessageEventResult:
-        '''发送b站番剧更新表，当用户需要番剧更新列表，提到有关番剧，动画，动漫，b站番剧更新表或b站番剧时调用此工具
-            Args:num(string): 用户需要发送的数量，如果用户没有明确指出，请设置为为5
-        '''
-        message_chain = event.get_messages()  # 用户所发的消息的消息链
-        logger.info(message_chain)
-        if not num:
-            num = 5
-        data = self.get_update_days(num)
-        result = event.make_result()
-
-        result.chain = []
-        if data:
-            for item in data:
-                result.chain.append(Plain(f"Name: {item['Name']}\n"))
-                result.chain.append(Image.fromURL(item['Picture']))
-                result.chain.append(Plain(f"Update: {item['Update']}\n"))
-                result.chain.append(Plain(f"Time: {item['Time']}\n"))
-                result.chain.append(Plain(f"Url: {item['Url']}\n"))
-                result.chain.append(Plain("------------------\n"))
-        return event.set_result(result)
-
-    def get_update_days(self,num):
-        url = "https://api.lolimi.cn/API/B_Update_Days/api.php"
-        return_type = 'json'
-        params = {
-            'num': num,
-            'type': return_type
-        }
-        response = requests.get(url, params=params)
-        if response.status_code == 200:
-            data = response.json()
-            if data['code'] == 1:
-                return data['data']
-            else:
-                print(f"Error: {data['text']}")
-                return
-        else:
-            print(f"Failed to fetch data. Status code: {response.status_code}")
-            return
-    '''4---------------------------------------------------'''
-    @llm_tool("cosplay_image")
-    async def trap4(self, event: AstrMessageEvent)-> MessageEventResult:
-        '''发送cosplay图片,当用户需要cosplay图片，提到有关cosplay图片，cosplay时调用此工具'''
-        message_chain = event.get_messages()  # 用户所发的消息的消息链
-        logger.info(message_chain)
-        data = self.fetch_cosplay_data()
-        result = event.make_result()
-        title = data["data"]["Title"]
-        image_urls = data["data"]["data"]
-        result.chain = [Plain(f"标题: {title}\n")]
-        for url in image_urls:
-            result.chain.append(Image.fromURL(url))
-        return event.set_result(result)
-    def fetch_cosplay_data(self):
-        # API地址
-        url = "https://api.lolimi.cn/API/cosplay/api.php"
-        # 请求参数
-        params = {
-            "type": "json"  # 可以改为 "text" 或 "image" 根据需求
-        }
-        try:
-            # 发送GET请求
-            response = requests.get(url, params=params)
-            # 检查请求是否成功
-            if response.status_code == 200:
-                # 解析返回的JSON数据
-                data = response.json()
-                # 检查返回的状态码
-                if data.get("code") == "1":
-                    return data
-
-                else:
-                    print(f"获取失败: {data.get('text')}")
-            else:
-                print(f"请求失败，状态码: {response.status_code}")
-        except requests.exceptions.RequestException as e:
-            print(f"请求出错: {e}")
-
-    '''5---------------------------------------------------'''
-    @llm_tool("translate")
-    async def trap5(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
-        '''翻译用户提供的内容文字（翻译为英文）,当用户需要翻译，提到有关翻译什么时调用此工具
-        Args:a(string): 用户提供的内容文字（即需要翻译的内容），可以模糊判断
-        '''
-        data = self.translate_text(a)
-        result = event.make_result()
-        result.chain = [Plain(f"翻译结果：{data}")]
-        return event.set_result(result)
-    def translate_text(self,msg):
-        # 接口地址
-        url = "https://api.lolimi.cn/API/qqfy/api.php"
-        output_format = 'json'
-        # 请求参数
-        params = {
-            'msg': msg,
-            'type': output_format
-        }
-        # 发送GET请求
-        response = requests.get(url, params=params)
-        # 检查请求是否成功
-        if response.status_code == 200:
-            # 根据返回格式处理响应
-            if output_format == 'json':
-                data = response.json()
-                return data['text']# 返回JSON格式的数据
-            else:
-                return response.text  # 返回纯文本格式的数据
-        else:
-            return f"请求失败，状态码: {response.status_code}"
-    '''6---------------------------------------------------'''
-    @llm_tool("Random_paragraph")
-    async def trap6(self, event: AstrMessageEvent)-> MessageEventResult:
-        '''发送一段随机的段子，当用户需要段子，提到有关段子，随即段子时调用此工具'''
-        message_chain = event.get_messages()  # 用户所发的消息的消息链
-        logger.info(message_chain)
-        data = self.get_random_text()
-        result = event.make_result()
-        result.chain = [Plain(f"随机段子：{data}")]
-        return event.set_result(result)
-    def get_random_text(self):
-        url = "https://api.lolimi.cn/API/yiyan/dz.php"
-        try:
-            response = requests.get(url)
-            response.raise_for_status()  # 检查请求是否成功
-            return response.text
-        except requests.exceptions.RequestException as e:
-            return f"请求失败: {e}"
-    '''7---------------------------------------------------'''
-    @llm_tool("Search_for_pictures")
-    async def trap7(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
-        '''对用户给出的关键词使用搜狗搜索引擎进行搜图操作，当用户需要搜图，提到有关搜索什么图片时调用此工具
-        Args:a(string): 用户给出的关键词或用户提到的文字内容，可以模糊判断'''
-        data = self.fetch_image_url(a)
-        result = event.make_result()
-        result.chain = [Plain(f"{a}搜图结果:\n"), Image.fromURL(data)]
-        return event.set_result(result)
-    def fetch_image_url(self,search_term):
-        # API接口地址
-        url = "https://api.lolimi.cn/API/sgst/api.php"
-        response_type = 'json'
-        # 请求参数
-        params = {
-            'msg': search_term,
-            'type': response_type
-        }
-        # 发送GET请求
-        response = requests.get(url, params=params)
-        # 检查请求是否成功
-        if response.status_code == 200:
-            # 解析返回的JSON数据
-            data = response.json()
-            # 检查状态码
-            if data.get('code') == 1:
-                # 获取图片链接
-                image_url = data['data']['url']
-                print(f"获取成功，图片链接: {image_url}")
-                return image_url
-            else:
-                print(f"获取失败: {data.get('text')}")
-        else:
-            print(f"请求失败，状态码: {response.status_code}")
-    '''8---------------------------------------------------'''
-    @llm_tool("weather")
-    async def trap8(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
-        '''查询用户给出的地点的天气情况，当用户需要什么地方的天气，提到有关天气时调用此工具
-        Args:a(string): 用户给出的地点，如北京/上海/重庆/深圳，等等，可以模糊判断'''
-        data = self.get_weather(a)
-        result = event.make_result()
-        result.chain = []
-        if isinstance(data, dict):
-            result.chain.append(Plain(f"Weather Data for {data.get('city')}\n"))
-            result.chain.append(Plain(f"Temperature: {data.get('temp')}\n"))
-            result.chain.append(Plain(f"Weather: {data.get('weather')}\n"))
-            result.chain.append(Plain(f"Wind: {data.get('wind')}\n"))
-            result.chain.append(Plain(f"Wind Speed: {data.get('windSpeed')}\n"))
-        else:
-            print(data)
-        return event.set_result(result)
-    def get_weather(self,city):
-        # API地址
-        url = "https://api.lolimi.cn/API/weather/api.php"
-        # 请求参数
-        params = {
-            "city": city,
-            "type": "json"  # 指定返回格式为JSON
-        }
-        try:
-            # 发送GET请求
-            response = requests.get(url, params=params)
-            # 检查请求是否成功
-            if response.status_code == 200:
-                # 解析JSON响应
-                data = response.json()
-                # 检查返回的状态码
-                if data.get("code") == 1:
-                    # 获取成功，返回数据
-                    return data.get("data")
-                else:
-                    # 获取失败，返回错误信息
-                    return f"Error: {data.get('text')}"
-            else:
-                # 请求失败，返回状态码
-                return f"Request failed with status code: {response.status_code}"
-        except Exception as e:
-            # 捕获异常并返回错误信息
-            return f"An error occurred: {str(e)}"
-    '''9---------------------------------------------------'''
-    @llm_tool("Poisonous_Chicken_Soup")
-    async def trap9(self, event: AstrMessageEvent)-> MessageEventResult:
-        '''发送一段毒鸡汤文字内容，用户需要毒鸡汤，提到有关毒鸡汤时调用此工具'''
-        data = self.get_dujitang()
-        result = event.make_result()
-        result.chain = [Plain(f"毒鸡汤：{data}")]
-        return event.set_result(result)
-    def get_dujitang(self):
-        url = "https://api.lolimi.cn/API/du/api.php"
-        params = {
-            "type": "json"  # 你可以根据需要选择返回格式，这里选择json
-        }
-
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()  # 检查请求是否成功
-            data = response.json()  # 解析返回的JSON数据
-
-            if data.get("code") == "1":
-                return data.get("text")
-            else:
-                return "Failed to retrieve dujitang."
-
-        except requests.exceptions.RequestException as e:
-            return f"An error occurred: {e}"
-    '''---------------------------------------------------'''
-    @llm_tool("Avatar_Frame")
-    async def trap10(self, event: AstrMessageEvent)-> MessageEventResult:
-        '''发送一张头像框图片，用户需要制作头像框，提到有关头像框时调用此工具'''
-        id = self.parse_target(event)
-        data = self.get_qq_avatar(id)
-        result = event.make_result()
-        result.chain = [Image.fromFileSystem(data)]
-        return event.set_result(result)
-    def get_qq_avatar(self,qq_number):
-        # API地址
-        url = "https://api.lolimi.cn/API/head/api.php"
-
-        # 请求参数
-        params = {
-            "QQ": qq_number
-        }
-
-        # 发送GET请求
-        response = requests.get(url, params=params)
-
-        # 检查请求是否成功
-        if response.status_code == 200:
-            image_data = response.content
-            with open(f"./data/plugins/astrbot_plugin_moreapi/pet.jpg", "wb") as file:
-                file.write(image_data)
-            return f"./data/plugins/astrbot_plugin_moreapi/pet.jpg"
-        else:
-            print(f"请求失败，状态码: {response.status_code}")
-    def parse_target(self, event):
-        """解析@目标或用户名"""
-        for comp in event.message_obj.message:
-            if isinstance(comp, At) and event.get_self_id() != str(comp.qq):
-                return str(comp.qq)
-
-    '''---------------------------------------------------'''
-    @llm_tool("Little_person_holding_a_sign")
-    async def trap11(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
-        '''根据用户要求的文字内容发送一张小人举牌图片，用户需要小人举牌图片，提到有关小人举牌，小人举牌图片，举牌时调用此工具
-        Args:a(string): 用户提到的文字内容，可以模糊判断'''
-        message_chain = event.get_messages()  # 用户所发的消息的消息链
-        logger.info(message_chain)
-        data = self.fetch_image_from_api(a)
-        result = event.make_result()
-        result.chain = [Image.fromFileSystem(data)]
-        return event.set_result(result)
-    def fetch_image_from_api(self,msg):
-        # API地址
-        url = "https://api.lolimi.cn/API/pai/api.php"
-
-        # 请求参数
-        params = {
-            'msg': msg
-        }
-
-        # 发送GET请求
-        response = requests.get(url, params=params)
-
-        # 检查请求是否成功
-        if response.status_code == 200:
-            # 将返回的图片内容保存到本地
-            image_data = response.content
-            with open(f"./data/plugins/astrbot_plugin_moreapi/pe.png", "wb") as file:
-                file.write(image_data)
-            return f"./data/plugins/astrbot_plugin_moreapi/pe.png"
-        else:
-            print(f"请求失败，状态码: {response.status_code}")
-    '''---------------------------------------------------'''
-    @llm_tool("Music_recommendation")
-    async def trap12(self, event: AstrMessageEvent)-> MessageEventResult:
-        '''给用户发送音乐推荐内容，用户需要音乐推荐，提到有关音乐推荐，音乐时调用此工具'''
-        message_chain = event.get_messages()  # 用户所发的消息的消息链
-        logger.info(message_chain)
-        data = self.get_music()
-        det = self.generate_music(data['data'].get('Url', 'N/A'))
-        result = event.make_result()
-        result.chain = []
-        # 拼接字符串
-        result.chain.append(Plain(f"Music: {data['data'].get('Music', 'N/A')}\n"))
-        result.chain.append(Plain(f"Name: {data['data'].get('name', 'N/A')}\n"))
-        result.chain.append(Image.fromURL(data['data'].get('Picture', 'N/A')))
-        result.chain.append(Plain(f"ID: {data['data'].get('id', 'N/A')}\n"))
-        result.chain.append(Plain(f"Content: {data['data'].get('Content', 'N/A')}\n"))
-        result.chain.append(Plain(f"Nick: {data['data'].get('Nick', 'N/A')}\n"))
+    @filter.command("b站番剧")
+    async def trap3(self, event: AstrMessageEvent,num:str):
+        if not num:num = 5
+        result = search.get_update_days(num)
+        await event.send(result)
+    @filter.command("cosplay")
+    async def trap4(self, event: AstrMessageEvent):
+        result = cosplay.fetch_cosplay_data()
+        await event.send(result)
+    @filter.command("翻译")
+    async def trap5(self, event: AstrMessageEvent,a:str):
+        result = translate.translate_text(a)
+        await event.send(result)
+    @filter.command("每日段子")
+    async def trap6(self, event: AstrMessageEvent):
+        result = text.get_random_text()
+        await event.send(result)
+    @filter.command("毒鸡汤")
+    async def trap9(self, event: AstrMessageEvent):
+        result = text.get_dujitang()
+        await event.send(result)
+    @filter.command("搜狗搜图")
+    async def trap7(self, event: AstrMessageEvent,a:str):
+        result = search.fetch_image_url(a)
+        await event.send(result)
+    @filter.command("天气")
+    async def trap8(self, event: AstrMessageEvent,a:str):
+        result = search.get_weather(a)
+        await event.send(result)
+    @filter.command("头像框")
+    async def trap10(self, event: AstrMessageEvent):
+        id = emoji.parse_target(event)
+        result = emoji.get_qq_avatar(id)
+        await event.send(result)
+    @filter.command("小人举牌")
+    async def trap11(self, event: AstrMessageEvent,a:str):
+        result = emoji.fetch_image_from_api(a)
+        await event.send(result)
+    @filter.command("音乐推荐")
+    async def trap12(self, event: AstrMessageEvent):
+        result = music.get_music()
+        det = music.search_music3()
         voice = MessageChain()
         voice.chain.append(Record(file=det))
         await event.send(voice)
-        return event.set_result(result)
-    def get_music(self):
-        url = "https://api.lolimi.cn/API/wyrp/api.php"
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            return data
-    '''---------------------------------------------------'''
-    @llm_tool("Random_Genshin_Impact_pictures")
-    async def trap13(self, event: AstrMessageEvent)-> MessageEventResult:
+        await event.send(result)
+    @filter.command("随机原神")
+    async def trap13(self, event: AstrMessageEvent):
         '''发送一张随机的关于原神的图片，用户需要原神图片，提到有关原神图片，原神时调用此工具'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
         logger.info(message_chain)
@@ -465,7 +161,7 @@ class MyPlugin(Star):
         result = event.make_result()
         result.chain = [Image.fromURL(data)]
         # 将结果添加到 chain 中
-        return event.set_result(result)
+        await event.send(result)
     def call_api(self):
         # 接口地址
         url = "https://api.lolimi.cn/API/yuan/api.php"
@@ -486,7 +182,8 @@ class MyPlugin(Star):
         else:
             print("请求失败，状态码:", response.status_code)
     '''---------------------------------------------------'''
-    @llm_tool("Random_Dragon_Chart")
+
+    @filter.command("随机龙图")
     async def trap14(self, event: AstrMessageEvent)-> MessageEventResult:
         '''发送一张随机的‘龙图‘，用户需要龙图，提到有关龙图时调用此工具’'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
@@ -510,7 +207,8 @@ class MyPlugin(Star):
             print(f"请求失败，状态码: {response.status_code}")
 
     '''---------------------------------------------------'''
-    @llm_tool("Gentle_quotes")
+
+    @filter.command("温柔语录")
     async def trap15(self, event: AstrMessageEvent)-> MessageEventResult:
         '''发送一段温柔语录的文字内容，用户需要温柔语录，提到有关温柔语录时调用此工具'''
         message_chain = event.get_messages()  # 用户所发的消息的消息链
@@ -528,7 +226,8 @@ class MyPlugin(Star):
         except requests.exceptions.RequestException as e:
             return f"请求失败: {e}"
     '''---------------------------------------------------'''
-    @llm_tool("Handwritten_text_to_images")
+
+    @filter.command("手写")
     async def trap114(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
         '''根据用户提到的文字内容发送一张手写的该文字内容的图片，用户需要手写图片，提到有关手写图片，手写时调用此工具
         Args:a(string): 用户提到的文字内容，可以模糊判断'''
@@ -559,7 +258,7 @@ class MyPlugin(Star):
 
     '''---------------------------------------------------'''
 
-    @llm_tool("ai_drawing")
+    @filter.command("ai绘图")
     async def trap112(self, event: AstrMessageEvent,a:str)-> MessageEventResult:
         '''根据用户提供的关键词发送一张根据关键词的ai绘图的图片，用户需要ai绘图，画一张图，提到有关ai绘图，画一张图时调用此工具
         Args:a(string): 用户提到的关键词，可以模糊判断'''
@@ -604,7 +303,7 @@ class MyPlugin(Star):
             print(f"请求异常: {e}")
     '''---------------------------------------------------'''
 
-    @llm_tool("Random_Superpower")
+    @filter.command("随机生成超能力")
     async def trapa1544(self, event: AstrMessageEvent) -> MessageEventResult:
         '''随机生成超能力及其副作用，用户需要随机超能力，提到有关超能力时调用此工具'''
         data = self.get_random_superpower()
@@ -638,7 +337,7 @@ class MyPlugin(Star):
             return None
     '''--------------------------------------------'''
 
-    @llm_tool("Daily_60s_News")
+    @filter.command("每日60秒早报")
     async def trap11237(self, event: AstrMessageEvent) -> MessageEventResult:
         '''获取每日60秒早报，用户需要每日新闻，提到有关60秒早报,早报，新闻，每日新闻时调用此工具'''
         data = self.get_daily_60s_news()
@@ -672,7 +371,7 @@ class MyPlugin(Star):
             print(f"请求异常: {e}")
             return None
 
-    @llm_tool("Bilibili_Video_Search")
+    @filter.command("搜索B站视频")
     async def trap17453(self, event: AstrMessageEvent, msg: str, n: str = "1") -> MessageEventResult:
         '''根据用户提供的关键词搜索B站视频，用户需要搜索B站视频，提到有关搜索B站视频，B站视频时调用此工具
         Args:
@@ -716,7 +415,7 @@ class MyPlugin(Star):
             print(f"请求异常: {e}")
             return None
 
-    @llm_tool("Baike_Search")
+    @filter.command("百度百科查询")
     async def trap178907(self, event: AstrMessageEvent, msg: str) -> MessageEventResult:
         '''根据用户提供的关键词查询百科内容，用户需要百科查询，需要查询什么具体的事务，提到有关百科，或者查询什么东西时调用此工具
         Args:msg(string): 用户提供的关键词，可以模糊判断'''

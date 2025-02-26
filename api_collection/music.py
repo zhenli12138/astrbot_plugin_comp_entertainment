@@ -2,6 +2,7 @@ from astrbot.api.all import *
 import requests
 from typing import Optional
 op = ''
+urls = ''
 def search_music(song_name: str, n: Optional[int] = None):
     # API地址
     url = "https://www.hhlqilongzhu.cn/api/dg_wyymusic.php"
@@ -35,7 +36,7 @@ def search_music(song_name: str, n: Optional[int] = None):
                 result.chain.append(Plain(f"找到以下歌曲:\n"))
                 for item in data.get("data", []):
                     result.chain.append(Plain(f"{item['n']}. {item['title']} - {item['singer']}\n"))
-                result.chain.append(Plain("请输入序号获取具体歌曲信息"))
+                result.chain.append(Plain("请输入【音乐 <序号>】获取具体歌曲"))
                 return result
         else:
             result.chain.append(Plain("搜索失败，请稍后再试。"))
@@ -44,4 +45,38 @@ def search_music(song_name: str, n: Optional[int] = None):
         print(f"请求异常: {e}")
         return None
 def search_music2():
-    return op
+    global op
+    det = generate_music(op)
+    return det
+def get_music():
+    '''给用户发送音乐推荐内容，用户需要音乐推荐，提到有关音乐推荐，音乐时调用此工具'''
+    url = "https://api.lolimi.cn/API/wyrp/api.php"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        result = MessageChain()
+        result.chain = []
+        # 拼接字符串
+        result.chain.append(Plain(f"Music: {data['data'].get('Music', 'N/A')}\n"))
+        result.chain.append(Plain(f"Name: {data['data'].get('name', 'N/A')}\n"))
+        result.chain.append(Image.fromURL(data['data'].get('Picture', 'N/A')))
+        result.chain.append(Plain(f"ID: {data['data'].get('id', 'N/A')}\n"))
+        result.chain.append(Plain(f"Content: {data['data'].get('Content', 'N/A')}\n"))
+        result.chain.append(Plain(f"Nick: {data['data'].get('Nick', 'N/A')}\n"))
+        global urls
+        urls = data['data'].get('Url', 'N/A')
+        return result
+def search_music3():
+    global urls
+    det = generate_music(urls)
+    return det
+def generate_music(url):
+    response = requests.get(url)
+    # 检查请求是否成功
+    if response.status_code == 200:
+        # 保存音乐文件到本地
+        with open("./data/plugins/astrbot_plugin_moreapi/music.mp3", "wb") as file:
+            file.write(response.content)
+        return "./data/plugins/astrbot_plugin_moreapi/music.mp3"
+    else:
+        print(f"下载失败，状态码: {response.status_code}")
