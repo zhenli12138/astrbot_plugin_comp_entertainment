@@ -1,6 +1,6 @@
 from astrbot.api.all import *
 import requests
-from typing import Optional
+import random
 def mix_emojis(emoji1: str, emoji2: str):
     # API地址
     url = "https://free.wqwlkj.cn/wqwlapi/emojimix.php"
@@ -104,3 +104,71 @@ def generate_image12(prompt):
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
+def fetch_image(qq_number, flag):
+    # 摸头
+    # 定义字典映射
+    switch_dict = {
+        "摸头": "https://api.lolimi.cn/API/face_petpet/api.php",
+        "感动哭了": "https://api.lolimi.cn/API/face_touch/api.php",
+        "膜拜": "https://api.lolimi.cn/API/face_worship/api.php",
+        "咬": "https://api.lolimi.cn/API/face_suck/api.php",
+        "可莉吃": "https://api.lolimi.cn/API/chi/api.php",
+        "吃掉": "https://api.lolimi.cn/API/face_bite/api.php",
+        "捣": "https://api.lolimi.cn/API/face_pound/api.php",
+        "咸鱼": "https://api.lolimi.cn/API/face_yu/api.php",
+        "玩": "https://api.lolimi.cn/API/face_play/api.php",
+        "舔": "https://api.lolimi.cn/API/tian/api.php",
+        "拍": "https://api.lolimi.cn/API/face_pat/api.php",
+        "丢": "https://api.lolimi.cn/API/diu/api.php",
+        "撕": "https://api.lolimi.cn/API/si/api.php",
+        "求婚": "https://api.lolimi.cn/API/face_propose/api.php",
+        "爬": "https://api.lolimi.cn/API/pa/api.php",
+        "你可能需要他": "https://api.lolimi.cn/API/face_need/api.php",
+        "想看":"https://api.lolimi.cn/API/face_thsee/api.php",
+        "点赞":"https://api.lolimi.cn/API/zan/api.php",
+    }
+    # 获取对应的函数并执行
+    url = switch_dict.get(flag, '')
+    params = {
+        'QQ': qq_number
+    }
+    response = requests.get(url, params=params)
+    result = MessageChain()
+    result.chain = []
+    if response.status_code == 200:
+        image_data = response.content
+        with open(f"./data/plugins/astrbot_plugin_emojiproduction/petemoji.gif", "wb") as file:
+            file.write(image_data)
+        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_emojiproduction/petemoji.gif")]
+        return result
+    else:
+        result.chain.append(Plain(f"表情包制作失败"))
+        return result
+
+def fetch_image2(qq_number, qq_number2,msg,msg2):
+    url = "https://api.lolimi.cn/API/preview/api.php"
+    # 生成 1 到 10 之间的随机整数
+    types = random.randint(1, 166)
+    params = {
+        'qq': qq_number,
+        'qq2': qq_number2,
+        'msg':msg,
+        'msg2':msg2,
+        'type': types,
+    }
+    result = MessageChain()
+    result.chain = []
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        image_data = response.content
+        with open(f"./data/plugins/astrbot_plugin_emojiproduction/p.gif", "wb") as file:
+            file.write(image_data)
+        return f"./data/plugins/astrbot_plugin_emojiproduction/p.gif"
+    else:
+        result.chain.append(Plain(f"表情包制作失败"))
+        return result
+
+def parse_target2(event,ids):
+    for comp in event.message_obj.message:
+        if isinstance(comp, At) and event.get_self_id() != str(comp.qq) and ids!= str(comp.qq):
+            return str(comp.qq)
