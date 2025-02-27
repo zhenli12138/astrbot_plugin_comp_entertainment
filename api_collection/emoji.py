@@ -173,3 +173,5 @@ def parse_target2(event,ids):
     for comp in event.message_obj.message:
         if isinstance(comp, At) and event.get_self_id() != str(comp.qq) and ids!= str(comp.qq):
             return str(comp.qq)
+        else:
+            return event.get_self_id()
