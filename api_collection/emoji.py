@@ -137,9 +137,9 @@ def fetch_image(qq_number, flag):
     result.chain = []
     if response.status_code == 200:
         image_data = response.content
-        with open(f"./data/plugins/astrbot_plugin_emojiproduction/petemoji.gif", "wb") as file:
+        with open(f"./data/plugins/astrbot_plugin_moreapi/petemoji.gif", "wb") as file:
             file.write(image_data)
-        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_emojiproduction/petemoji.gif")]
+        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_moreapi/petemoji.gif")]
         return result
     else:
         result.chain.append(Plain(f"表情包制作失败"))
@@ -161,9 +161,9 @@ def fetch_image2(qq_number, qq_number2,msg,msg2):
     response = requests.get(url, params=params)
     if response.status_code == 200:
         image_data = response.content
-        with open(f"./data/plugins/astrbot_plugin_emojiproduction/p.gif", "wb") as file:
+        with open(f"./data/plugins/astrbot_plugin_moreapi/p1.gif", "wb") as file:
             file.write(image_data)
-        return f"./data/plugins/astrbot_plugin_emojiproduction/p.gif"
+        return f"./data/plugins/astrbot_plugin_moreapi/p1.gif"
     else:
         result.chain.append(Plain(f"表情包制作失败"))
         return result
