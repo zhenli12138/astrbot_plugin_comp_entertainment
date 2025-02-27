@@ -2,10 +2,8 @@ from typing import List, Dict, Optional
 from astrbot.api.event import filter
 from astrbot.api.all import *
 import os
-from data.plugins.astrbot_plugin_moreapi.api_collection import api,emoji,image, \
-    translate, text, search, blue_archive
-from data.plugins.astrbot_plugin_moreapi.api_collection import video, music, guangyu, chess
-
+from data.plugins.astrbot_plugin_moreapi.api_collection import api,emoji,image,translate, text, search
+from data.plugins.astrbot_plugin_moreapi.api_collection import video, music, guangyu, chess, blue_archive
 @register("astrbot_plugin_moreapi", "达莉娅",
           "多功能调用插件，发【api】看菜单",
           "v1.6.0")
@@ -109,12 +107,12 @@ class MyPlugin(Star):
     async def trap16(self, event: AstrMessageEvent,a:str):
         result = emoji.generate_image12(a)
         await event.send(result)
-    @filter.command("ai绘图")
-    async def trap17(self, event: AstrMessageEvent,a:str):
-        result = emoji.generate_imageai(a)
+    @filter.command("塔罗牌")
+    async def trap17(self, event: AstrMessageEvent):
+        result = image.get_tarot_reading()
         await event.send(result)
     @filter.command("随机生成超能力")
-    async def trapa18(self, event: AstrMessageEvent):
+    async def trap18(self, event: AstrMessageEvent):
         result = image.get_random_superpower()
         await event.send(result)
     @filter.command("网页截图")
@@ -185,6 +183,10 @@ class MyPlugin(Star):
         ba = blue_archive.Baarchive()
         result = ba.handle_blue_archive(a)
         await event.send(result)
+
+
+
+
 '''
     @llm_tool("Image_Recognition")
     async def trap1566(self, event: AstrMessageEvent, image_url: str) -> MessageEventResult:

@@ -224,3 +224,33 @@ def get_webpage_screenshot(url):
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
+def get_tarot_reading():
+    '''随机生成塔罗牌占卜结果，用户需要塔罗牌占卜，提到有关塔罗牌时调用此工具'''
+    # API地址
+    url = "https://oiapi.net/API/Tarot"
+    try:
+        # 发送GET请求
+        response = requests.get(url)
+        response.raise_for_status()  # 检查请求是否成功
+        data = response.json()  # 解析返回的JSON数据
+        result = MessageChain()
+        result.chain = []
+        if data.get("code") == 1:
+            for card in data.get("data", []):
+                result.chain.append(Plain(f"位置: {card.get('position', 'N/A')}\n"))
+                result.chain.append(Plain(f"含义: {card.get('meaning', 'N/A')}\n"))
+                result.chain.append(Plain(f"中文名: {card.get('name_cn', 'N/A')}\n"))
+                result.chain.append(Plain(f"英文名: {card.get('name_en', 'N/A')}\n"))
+                if card.get("type") == "正位":
+                    result.chain.append(Plain(f"正位: {card.get('正位', 'N/A')}\n"))
+                else:
+                    result.chain.append(Plain(f"逆位: {card.get('逆位', 'N/A')}\n"))
+                result.chain.append(Image.fromURL(card.get("pic", "N/A")))
+                result.chain.append(Plain("-" * 20 + "\n"))
+            return result
+        else:
+            result.chain.append(Plain(f"获取失败: {data.get('message', '未知错误')}"))
+            return result
+    except requests.exceptions.RequestException as e:
+        print(f"请求异常: {e}")
+        return None

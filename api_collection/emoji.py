@@ -104,37 +104,3 @@ def generate_image12(prompt):
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
-def generate_imageai(prompt):
-    # API地址
-    '''根据用户提供的关键词发送一张根据关键词的ai绘图的图片，用户需要ai绘图，画一张图，提到有关ai绘图，画一张图时调用此工具
-    Args:a(string): 用户提到的关键词，可以模糊判断'''
-    model = "normal"
-    url = "https://api.pearktrue.cn/api/stablediffusion/"
-    # 请求参数
-    params = {
-        "prompt": prompt,
-        "model": model
-    }
-    try:
-        # 发送GET请求
-        response = requests.get(url, params=params)
-        # 检查请求是否成功
-        if response.status_code == 200:
-            # 解析返回的JSON数据
-            data = response.json()
-            if data["code"] == 200:
-                print("AI绘画成功！")
-                result = MessageChain()
-                result.chain = []
-                result.chain = []
-                if data:
-                    result.chain.append(Plain(f"绘画词: {data['prompt']}\n"))
-                    result.chain.append(Image.fromURL(data['imgurl']))
-                return result
-            else:
-                print(f"请求失败: {data['msg']}")
-        else:
-            print(f"请求失败，状态码: {response.status_code}")
-
-    except requests.exceptions.RequestException as e:
-        print(f"请求异常: {e}")
