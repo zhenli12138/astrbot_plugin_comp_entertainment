@@ -163,7 +163,8 @@ def fetch_image2(qq_number, qq_number2,msg,msg2):
         image_data = response.content
         with open(f"./data/plugins/astrbot_plugin_moreapi/p1.gif", "wb") as file:
             file.write(image_data)
-        return f"./data/plugins/astrbot_plugin_moreapi/p1.gif"
+        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_moreapi/p1.gif")]
+        return result
     else:
         result.chain.append(Plain(f"表情包制作失败"))
         return result
