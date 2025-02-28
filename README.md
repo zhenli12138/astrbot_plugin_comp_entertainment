@@ -3,7 +3,7 @@
 
 <div align="center">
 
-[![Moe Counter](https://count.getloli.com/get/@GalChat?theme=moebooru)](https://github.com/zhenli12138/astrbot_plugin_moreapi)
+https://count.getloli.com/@moreapi?name=moreapi&theme=capoo-2&padding=10&offset=0&align=center&scale=1&pixelated=1&darkmode=auto
 
 </div>
 
