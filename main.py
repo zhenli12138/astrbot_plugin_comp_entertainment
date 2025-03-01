@@ -387,7 +387,7 @@ class MyPlugin(Star):
             yield event.chain_result(chain2)
 
     @filter.command("gg")
-    async def switch(self, event: AstrMessageEvent):
+    async def switch2(self, event: AstrMessageEvent):
         self.op = True
         chain1 = [Plain(f"TTS启动"), Face(id=337)]
         yield event.chain_result(chain1)
