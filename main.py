@@ -318,7 +318,7 @@ class MyPlugin(Star):
         data = emoji.fetch_image(ids, "点赞")
         await event.send(data)
     @filter.on_decorating_result(priority=100)
-    async def voice(self, event: AstrMessageEvent,model: str = "菈妮"):
+    async def voice(self, event: AstrMessageEvent):
         result = event.get_result()
         texts = result.get_plain_text()
         room = event.get_group_id()
@@ -348,7 +348,7 @@ class MyPlugin(Star):
             logger.info(f"过滤颜表情后的文本是：{texts}")
         text_chunks = [texts[i:i + 200] for i in range(0, len(texts), 200)]
         for chunk in text_chunks:
-            result = music.generate_voice(chunk, model)
+            result = music.generate_voice(chunk,"梅琳娜")
             await event.send(result)
 
     @filter.command("vits")
