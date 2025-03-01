@@ -2,6 +2,9 @@ from typing import List, Dict, Optional
 from astrbot.api.event import filter
 from astrbot.api.all import *
 import os
+from typing import (Dict, Any, Optional, AnyStr, Callable, Union, Awaitable,
+                    Coroutine)
+
 from data.plugins.astrbot_plugin_moreapi.api_collection import api,emoji,image,translate, text, search
 from data.plugins.astrbot_plugin_moreapi.api_collection import video, music, guangyu, chess, blue_archive
 @register("astrbot_plugin_moreapi", "达莉娅",
@@ -10,9 +13,37 @@ from data.plugins.astrbot_plugin_moreapi.api_collection import video, music, gua
 class MyPlugin(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
+        self.op = False
+        self.flag2 = True
+        self.flag = False
         self.song_name = None
+        self.rooms = []
         self.config = config
+        self.file_path = './data/plugins/astrbot_plugin_moreapi/data.jsonl'
+        if not os.path.exists(self.file_path):
+            self.save_game()
+            print(f"文件 {self.file_path} 不存在，已创建并初始化。")
+        else:
+            print(f"文件 {self.file_path} 已存在，跳过创建。")
+        self.load_game()
         #self.api_name = config.get('name', 'FunAudioLLM/CosyVoice2-0.5B')
+
+    def load_game(self):
+        dicts = []
+        with open(self.file_path, 'r') as f:
+            for line in f:
+                dicts.append(json.loads(line.strip()))
+        # 分配到各自的字典
+        if not dicts:  # 如果 dicts 为空
+            logger.warning("加载的数据为空")
+            return
+        else:
+            self.rooms = dicts[0]
+            return
+
+    def save_game(self):
+        with open(self.file_path, 'w') as f:
+            f.write(json.dumps(self.rooms) + '\n')
     '''---------------------------------------------------'''
     @command("test")
     async def test(self, event: AstrMessageEvent):
@@ -52,11 +83,18 @@ class MyPlugin(Star):
         await event.send(result)
     @filter.command("cosplay")
     async def trap4(self, event: AstrMessageEvent):
-        result = image.fetch_cosplay_data()
-        await event.send(result)
+        dat = image.fetch_cosplay_data()
+        result = MessageChain()
+        result.chain = []
+        for reg in dat:
+            result.chain.append(reg)
+            await event.send(result)
+            result.chain = []
     @filter.command("翻译")
-    async def trap5(self, event: AstrMessageEvent,a:str):
-        result = translate.translate_text(a)
+    async def trap5(self, event: AstrMessageEvent):
+        msg = event.get_message_str()
+        parts = msg.split(maxsplit = 1)
+        result = translate.translate_text(parts[1])
         await event.send(result)
     @filter.command("每日段子")
     async def trap6(self, event: AstrMessageEvent):
@@ -279,10 +317,80 @@ class MyPlugin(Star):
         ids = emoji.parse_target(event)
         data = emoji.fetch_image(ids, "点赞")
         await event.send(data)
+    @filter.on_decorating_result(priority=100)
+    async def voice(self, event: AstrMessageEvent,model: str = "菈妮"):
+        result = event.get_result()
+        texts = result.get_plain_text()
+        room = event.get_group_id()
+        res = MessageChain()
+        res.chain = result.chain
+        adapter_name = event.get_platform_name()
+        if  not self.op:
+            return
+        if adapter_name == "qq_official":
+            logger.info("检测为官方机器人，自动忽略转语音请求")
+            return
+        if not result.chain:
+            logger.info(f"返回消息为空,pass")
+            return
+        if not result.is_llm_result():
+            logger.info(f"非LLM消息,pass")
+            return
+        if room in self.rooms :
+            logger.info(f"本群插件已关闭")
+            return
+        if self.flag:
+            await event.send(res)
+        logger.info(f"LLM返回的文本是：{texts}")
+        result.chain.remove(Plain(texts))
+        if self.flag2:
+            texts = text.remove_complex_emoticons(texts)
+            logger.info(f"过滤颜表情后的文本是：{texts}")
+        text_chunks = [texts[i:i + 200] for i in range(0, len(texts), 200)]
+        for chunk in text_chunks:
+            result = music.generate_voice(chunk, model)
+            await event.send(result)
 
+    @filter.command("vits")
+    async def switch(self, event: AstrMessageEvent):
+        room  = event.get_group_id()
+        chain1 = [Plain(f"本群插件已经启动（仅本群）"),Face(id=337)]
+        chain2 = [Plain(f"本群插件已经关闭（仅本群）"),Face(id=337)]
+        if room in self.rooms:
+            self.rooms.remove(room)
+            self.save_game()
+            yield event.chain_result(chain1)
+        else:
+            self.rooms.append(room)
+            self.save_game()
+            yield event.chain_result(chain2)
 
+    @filter.command("filter")
+    async def filter_switch(self, event: AstrMessageEvent):
+        chain1 = [Plain(f"过滤已经启动"),Face(id=337)]
+        chain2 = [Plain(f"过滤已经关闭"),Face(id=337)]
+        self.flag2 = not self.flag2
+        if self.flag2:
+            yield event.chain_result(chain1)
+        else:
+            yield event.chain_result(chain2)
 
+    @filter.command("text")
+    async def text_switch(self, event: AstrMessageEvent):
+        user_id = event.get_sender_id()
+        chain1 = [Plain(f"文本已经启动"),Face(id=337)]
+        chain2 = [Plain(f"文本已经关闭"),Face(id=337)]
+        self.flag = not self.flag
+        if self.flag:
+            yield event.chain_result(chain1)
+        else:
+            yield event.chain_result(chain2)
 
+    @filter.command("gg")
+    async def switch(self, event: AstrMessageEvent):
+        self.op = True
+        chain1 = [Plain(f"TTS启动"), Face(id=337)]
+        yield event.chain_result(chain1)
 '''
     @llm_tool("Image_Recognition")
     async def trap1566(self, event: AstrMessageEvent, image_url: str) -> MessageEventResult:

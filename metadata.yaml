@@ -1,6 +1,6 @@
 name: astrbot_plugin_moreapi # 这是你的插件的唯一识别名。
 desc:  超多功能集成调用插件，发【api】看菜单 {指令版}【更新：集合了表情包制作插件所有功能】
 help:  # 插件的帮助信息
-version: v1.7.0 # 插件版本号。格式：v1.1.1 或者 v1.1
+version: v1.7.5
 author: 达莉娅 # 作者
 repo: https://github.com/zhenli12138/astrbot_plugin_moreapi

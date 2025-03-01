@@ -38,14 +38,26 @@ def fetch_cosplay_data():
             data = response.json()
             # 检查返回的状态码
             if data.get("code") == "1":
-                result = MessageChain()
-                result.chain = []
+                dist = []
+                dat = []
                 title = data["data"]["Title"]
-                image_urls = data["data"]["data"]
-                result.chain = [Plain(f"标题: {title}\n")]
-                for url in image_urls:
-                    result.chain.append(Image.fromURL(url))
-                return result
+                image_urls = data["data"]["data"][:15]
+                urlss = [image_urls[i:i + 5] for i in range(0, len(image_urls), 5)]
+                for urls in urlss:
+                    for url in urls:
+                        node = Node(
+                            name="鼠鼠的最爱",
+                            content=[
+                                Plain(f"标题：{title}"),
+                                Image.fromURL(url),
+                            ]
+                        )
+                        dist.append(node)
+                    reg = Nodes(dist)
+                    print(reg)
+                    dat.append(reg)
+                    dist.clear()
+                return dat
             else:
                 print(f"获取失败: {data.get('text')}")
         else:

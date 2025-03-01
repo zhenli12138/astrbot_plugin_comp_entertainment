@@ -1,3 +1,4 @@
+import re
 from astrbot.api.all import *
 import requests
 def get_random_text():
@@ -83,3 +84,13 @@ def get_tv_show_heat_ranking():
     except requests.exceptions.RequestException as e:
         result.chain.append(Plain(f"请求异常: {e}"))
         return result
+
+def remove_complex_emoticons(text):
+    pattern = r"""
+            \([^()]+\)              # 匹配括号内的复杂颜表情
+            |                       # 或
+            [^\u4e00-\u9fff，。？！、]  # 匹配非中文、非标点符号、非空格的字符
+    """
+    regexs = re.compile(pattern, re.VERBOSE)
+    cleaned_text = regexs.sub('', text)
+    return cleaned_text
