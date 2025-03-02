@@ -3,7 +3,7 @@ import requests
 
 def get_menu():
     # API地址
-    api_url = "https://116.62.188.107:5000/images/menu"
+    api_url = "http://116.62.188.107:5000/images/menu"
     try:
         # 发送GET请求
         response = requests.get(api_url)
@@ -21,7 +21,7 @@ def get_menu():
         return None
 def get_hash():
     # API地址
-    api_url = "https://116.62.188.107:5000/api/menu"
+    api_url = "http://116.62.188.107:5000/api/menu"
     # 发送GET请求
     response = requests.get(api_url)
     # 检查请求是否成功
