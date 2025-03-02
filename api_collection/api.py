@@ -19,3 +19,15 @@ def get_menu():
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
+def get_hash():
+    # API地址
+    api_url = "https://116.62.188.107:5000/api/menu"
+    # 发送GET请求
+    response = requests.get(api_url)
+    # 检查请求是否成功
+    if response.status_code == 200:
+        # 解析返回的JSON数据
+        data = response.json()
+        return data.get("hash")
+    else:
+        return None

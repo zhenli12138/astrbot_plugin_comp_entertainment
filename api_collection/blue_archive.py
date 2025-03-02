@@ -19,7 +19,7 @@ class Baarchive:
     def handle_blue_archive(self,text: str):
         '''根据用户提供的关键词进行碧蓝档案攻略查询，用户需要什么的碧蓝档案攻略，ba攻略，攻略，提到有关碧蓝档案攻略，ba攻略，攻略时调用此工具
         Args:text(string): 用户提供的关键词，比如‘国际服，可以模糊识别’'''
-        self.load_game()
+        self.load()
         params = {
             "name": text,
             "size": 8,
@@ -61,7 +61,7 @@ class Baarchive:
                         with open(local_path, "wb") as f:
                             f.write(data)
                         self.hash1[best_match['name']] = best_match['hash']
-                        self.save_game()
+                        self.save()
                         result.chain.append(Image.fromURL(best_match["urls"]))  # 使用小图
                 else:
                     result.chain.append(Plain(best_match["content"]))
@@ -91,7 +91,7 @@ class Baarchive:
                         with open(local_path, "wb") as f:
                             f.write(data)
                         self.hash1[item['name']] = item["hash"]
-                        self.save_game()
+                        self.save()
                         result.chain.append(Image.fromURL(item["urls"]))  # 使用小图
                 else:
                     result.chain.append(Plain(item["content"] + "\n"))
@@ -102,13 +102,13 @@ class Baarchive:
         return result
 
 
-    def load_game(self):
+    def load(self):
         if os.path.exists(self.hash_file):
             with open(self.hash_file, 'r', encoding='utf-8') as f:
                 self.hash1 = json.load(f)
 
 
-    def save_game(self):
+    def save(self):
         with open(self.hash_file, 'w', encoding='utf-8') as f:
             json.dump(self.hash1, f, ensure_ascii=False, indent=4)
 

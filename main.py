@@ -4,31 +4,56 @@ from astrbot.api.all import *
 import os
 from typing import (Dict, Any, Optional, AnyStr, Callable, Union, Awaitable,
                     Coroutine)
-
+import os
+from queue import Queue
+import random
+import time
+from collections import defaultdict
+import json
+from data.plugins.astrbot_plugin_moreapi.api_collection import daliya, ddz
+from data.plugins.astrbot_plugin_moreapi.api_collection import pilcreate
 from data.plugins.astrbot_plugin_moreapi.api_collection import api,emoji,image,translate, text, search
 from data.plugins.astrbot_plugin_moreapi.api_collection import video, music, guangyu, chess, blue_archive
 @register("astrbot_plugin_moreapi", "达莉娅",
           "多功能调用插件，发【api】看菜单",
           "v1.7.0")
-class MyPlugin(Star):
+class Moreapi(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
-        self.op = False
+        self.hashs = ''
+        self.config = config
+        self.opsss = False
         self.flag2 = True
         self.flag = False
         self.song_name = None
-        self.rooms = []
-        self.config = config
-        self.file_path = './data/plugins/astrbot_plugin_moreapi/data.jsonl'
+        self.hashfile = "./data/plugins/astrbot_plugin_moreapi/menu.json"
+        if not os.path.exists(self.hashfile):
+            self.save()
+            print(f"文件 {self.hashfile} 不存在，已创建并初始化。")
+        else:
+            print(f"文件 {self.hashfile} 已存在，跳过创建。")
+        self.load()
+        #TTS配置
+        self.vitsrooms = []
+        self.file_path = './data/plugins/astrbot_plugin_moreapi/vitsrooms.jsonl'
         if not os.path.exists(self.file_path):
-            self.save_game()
+            self.save_rooms()
             print(f"文件 {self.file_path} 不存在，已创建并初始化。")
         else:
             print(f"文件 {self.file_path} 已存在，跳过创建。")
+        self.load_rooms()
+        #ddz配置
+        self.rooms = {}  # {room_id: game}
+        self.player_rooms = {}  # {player_id: room_id}
+        self.ddzpath = './data/plugins/astrbot_plugin_moreapi/data.jsonl'
+        if not os.path.exists(self.ddzpath):
+            self.save_game()
+            print(f"文件 {self.ddzpath} 不存在，已创建并初始化。")
+        else:
+            print(f"文件 {self.ddzpath} 已存在，跳过创建。")
         self.load_game()
-        #self.api_name = config.get('name', 'FunAudioLLM/CosyVoice2-0.5B')
 
-    def load_game(self):
+    def load_rooms(self):
         dicts = []
         with open(self.file_path, 'r') as f:
             for line in f:
@@ -38,12 +63,31 @@ class MyPlugin(Star):
             logger.warning("加载的数据为空")
             return
         else:
+            self.vitsrooms = dicts[0]
+            return
+
+    def save_rooms(self):
+        with open(self.file_path, 'w') as f:
+            f.write(json.dumps(self.vitsrooms) + '\n')
+
+    def load_game(self):
+        dicts = []
+        with open(self.ddzpath, 'r') as f:
+            for line in f:
+                dicts.append(json.loads(line.strip()))
+        # 分配到各自的字典
+        if not dicts:  # 如果 dicts 为空
+            logger.warning("加载的数据为空")
+            return
+        else:
             self.rooms = dicts[0]
+            self.player_rooms = dicts[1]
             return
 
     def save_game(self):
-        with open(self.file_path, 'w') as f:
-            f.write(json.dumps(self.rooms) + '\n')
+        with open(self.ddzpath, 'w') as f:
+            for d in [self.rooms, self.player_rooms]:
+                f.write(json.dumps(d) + '\n')
     '''---------------------------------------------------'''
     @command("test")
     async def test(self, event: AstrMessageEvent):
@@ -56,10 +100,24 @@ class MyPlugin(Star):
     注册一个 function-calling 函数工具。
     请务必按照以下格式编写一个工具（包括函数注释，AstrBot 会尝试解析该函数注释）'''
     '''---------------------------------------------------'''
+    def load(self):
+        if os.path.exists(self.hashfile):
+            with open(self.hashfile, 'r', encoding='utf-8') as f:
+                self.hashs = json.load(f)
+
+
+    def save(self):
+        with open(self.hashfile, 'w', encoding='utf-8') as f:
+            json.dump(self.hashs, f, ensure_ascii=False, indent=4)
     @filter.command("api")
     async def menu(self, event: AstrMessageEvent):
+        new_hashs = api.get_hash()
+        if not new_hashs:
+            new_hashs = self.hashs
         img = "./data/plugins/astrbot_plugin_moreapi/menu_output.png"
-        if not os.path.exists(img):
+        if new_hashs != self.hashs:
+            self.hashs = new_hashs
+            self.save()
             result = api.get_menu()
         else:
             result = event.make_result()
@@ -325,7 +383,7 @@ class MyPlugin(Star):
         res = MessageChain()
         res.chain = result.chain
         adapter_name = event.get_platform_name()
-        if  not self.op:
+        if  not self.opsss:
             return
         if adapter_name == "qq_official":
             logger.info("检测为官方机器人，自动忽略转语音请求")
@@ -336,7 +394,7 @@ class MyPlugin(Star):
         if not result.is_llm_result():
             logger.info(f"非LLM消息,pass")
             return
-        if room in self.rooms :
+        if room in self.vitsrooms :
             logger.info(f"本群插件已关闭")
             return
         if self.flag:
@@ -356,13 +414,13 @@ class MyPlugin(Star):
         room  = event.get_group_id()
         chain1 = [Plain(f"本群插件已经启动（仅本群）"),Face(id=337)]
         chain2 = [Plain(f"本群插件已经关闭（仅本群）"),Face(id=337)]
-        if room in self.rooms:
-            self.rooms.remove(room)
-            self.save_game()
+        if room in self.vitsrooms:
+            self.vitsrooms.remove(room)
+            self.save_rooms()
             yield event.chain_result(chain1)
         else:
-            self.rooms.append(room)
-            self.save_game()
+            self.vitsrooms.append(room)
+            self.save_rooms()
             yield event.chain_result(chain2)
 
     @filter.command("filter")
@@ -388,9 +446,65 @@ class MyPlugin(Star):
 
     @filter.command("gg")
     async def switch2(self, event: AstrMessageEvent):
-        self.op = True
-        chain1 = [Plain(f"TTS启动"), Face(id=337)]
-        yield event.chain_result(chain1)
+        chain1 = [Plain(f"TTS启动"),Face(id=337)]
+        chain2 = [Plain(f"TTS关闭"),Face(id=337)]
+        self.opsss = not self.opsss
+        if self.flag:
+            yield event.chain_result(chain1)
+        else:
+            yield event.chain_result(chain2)
+    @filter.command("斗地主")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def ddz_menu(self, event: AstrMessageEvent):
+        img = pilcreate.generate_menu()
+        result = MessageChain()
+        result.chain = [Image.fromFileSystem(img)]
+        yield event.image_result(img)
+    @filter.command("结束游戏")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def exit_game(self,event: AstrMessageEvent):
+        self.rooms,self.player_rooms = await ddz.exit_game(event,self.rooms,self.player_rooms)
+        self.save_game()
+    @filter.command("退出房间")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def exit_room(self, event: AstrMessageEvent):
+        self.rooms,self.player_rooms = await ddz.exit_room(event,self.rooms,self.player_rooms)
+        self.save_game()
+    @filter.command("创建房间")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def create_room_cmd(self,event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.create_room(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command("加入房间")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def join_room_cmd(self,event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.join_room(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command("开始游戏")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def start_game(self,event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.start_game(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command('不抢')
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def process_bid1(self, event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.process_bid1(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command('抢地主')
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def process_bid2(self, event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.process_bid2(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command('出牌')
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def handle_play(self,event: AstrMessageEvent,cards_str:str):
+        self.rooms, self.player_rooms = await ddz.handle_play(event,cards_str,self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command('pass')
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def handle_pass(self,event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.handle_pass(event,self.rooms, self.player_rooms)
+        self.save_game()
 '''
     @llm_tool("Image_Recognition")
     async def trap1566(self, event: AstrMessageEvent, image_url: str) -> MessageEventResult:
