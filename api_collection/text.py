@@ -41,9 +41,9 @@ def movie():
     response = requests.get(url)
     if response.status_code == 200:
         data = response.content
-        with open(f"./data/plugins/astrbot_plugin_moreapi/movie.txt", "wb") as file:
+        with open(f"./data/plugins/astrbot_plugin_comp_entertainment/movie.txt", "wb") as file:
             file.write(data)
-        data = f"./data/plugins/astrbot_plugin_moreapi/movie.txt"
+        data = f"./data/plugins/astrbot_plugin_comp_entertainment/movie.txt"
         if os.path.exists(data):
             with open(data, 'r',encoding="utf-8") as file:
                 text = file.read()

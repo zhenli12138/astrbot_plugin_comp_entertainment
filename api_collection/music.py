@@ -76,9 +76,9 @@ def generate_music(url):
     # 检查请求是否成功
     if response.status_code == 200:
         # 保存音乐文件到本地
-        with open("./data/plugins/astrbot_plugin_moreapi/music.mp3", "wb") as file:
+        with open("./data/plugins/astrbot_plugin_comp_entertainment/music.mp3", "wb") as file:
             file.write(response.content)
-        return "./data/plugins/astrbot_plugin_moreapi/music.mp3"
+        return "./data/plugins/astrbot_plugin_comp_entertainment/music.mp3"
     else:
         print(f"下载失败，状态码: {response.status_code}")
 def generate_voice(text: str, model: str):

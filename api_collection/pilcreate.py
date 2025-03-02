@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 def generate_menu():
     # 背景图片路径
-    background_image_path = './data/plugins/astrbot_plugin_moreapi/background.jpg'
+    background_image_path = './data/plugins/astrbot_plugin_comp_entertainment/background.jpg'
     if background_image_path:
         img = Image.open(background_image_path).convert('RGBA')
         img = img.resize((800, 600))  # 调整底图大小
@@ -25,8 +25,8 @@ def generate_menu():
     d = ImageDraw.Draw(overlay)
 
     # 使用更美观的字体
-    font = ImageFont.truetype('./data/plugins/astrbot_plugin_moreapi/msyh.ttf', 28)
-    shadow_font = ImageFont.truetype('./data/plugins/astrbot_plugin_moreapi/msyh.ttf', 28)
+    font = ImageFont.truetype('./data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf', 28)
+    shadow_font = ImageFont.truetype('./data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf', 28)
 
     # 菜单内容
     menu = [
@@ -65,12 +65,12 @@ def generate_menu():
     img = img.convert('RGB')  # 转换回RGB模式以便保存为PNG
 
     # 保存图片
-    output_path = f"./data/plugins/astrbot_plugin_moreapi/ddz.png"
+    output_path = f"./data/plugins/astrbot_plugin_comp_entertainment/ddz.png"
     img.save(output_path, format='PNG')
     return output_path
 
 def generate_hand_image(cards,idx):
-    font = './data/plugins/astrbot_plugin_moreapi/msyh.ttf'
+    font = './data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf'
     card_width = 80
     card_height = 120
     spacing = 50
@@ -107,6 +107,6 @@ def generate_hand_image(cards,idx):
         bordered_img = ImageOps.expand(card_img, border=border_width, fill=border_color)
         img.paste(bordered_img, (i * spacing, 80))
 
-    output_path = f"./data/plugins/astrbot_plugin_moreapi/pic{idx}.png"
+    output_path = f"./data/plugins/astrbot_plugin_comp_entertainment/pic{idx}.png"
     img.save(output_path, format='PNG')
     return output_path

@@ -1,25 +1,22 @@
-from typing import List, Dict, Optional
 from astrbot.api.event import filter
 from astrbot.api.all import *
+from typing import (Dict, Any, Optional, AnyStr, Callable, Union, Awaitable,Coroutine)
 import os
-from typing import (Dict, Any, Optional, AnyStr, Callable, Union, Awaitable,
-                    Coroutine)
-import os
-from queue import Queue
-import random
-import time
-from collections import defaultdict
 import json
-from data.plugins.astrbot_plugin_moreapi.api_collection import daliya, ddz
-from data.plugins.astrbot_plugin_moreapi.api_collection import pilcreate
-from data.plugins.astrbot_plugin_moreapi.api_collection import api,emoji,image,translate, text, search
-from data.plugins.astrbot_plugin_moreapi.api_collection import video, music, guangyu, chess, blue_archive
-@register("astrbot_plugin_moreapi", "达莉娅",
-          "多功能调用插件，发【api】看菜单",
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,translate, text, search
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music, guangyu, chess, blue_archive
+@register("astrbot_plugin_comp_entertainment", "达莉娅",
+          "达莉娅群娱插件，50+超多功能集成调用插件，持续更新中，发【api】看菜单",
           "v1.8.2")
-class Moreapi(Star):
+class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
+        self.menu_path = "./data/plugins/astrbot_plugin_comp_entertainment/menu_output.png"
+        self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
+        self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
+        self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
         self.version = '182'
         self.hashs = ''
         self.config = config
@@ -27,7 +24,6 @@ class Moreapi(Star):
         self.flag2 = True
         self.flag = False
         self.song_name = None
-        self.hashfile = "./data/plugins/astrbot_plugin_moreapi/menu.json"
         if not os.path.exists(self.hashfile):
             self.save()
             print(f"文件 {self.hashfile} 不存在，已创建并初始化。")
@@ -36,7 +32,6 @@ class Moreapi(Star):
         self.load()
         #TTS配置
         self.vitsrooms = []
-        self.file_path = './data/plugins/astrbot_plugin_moreapi/vitsrooms.jsonl'
         if not os.path.exists(self.file_path):
             self.save_rooms()
             print(f"文件 {self.file_path} 不存在，已创建并初始化。")
@@ -46,7 +41,6 @@ class Moreapi(Star):
         #ddz配置
         self.rooms = {}  # {room_id: game}
         self.player_rooms = {}  # {player_id: room_id}
-        self.ddzpath = './data/plugins/astrbot_plugin_moreapi/data.jsonl'
         if not os.path.exists(self.ddzpath):
             self.save_game()
             print(f"文件 {self.ddzpath} 不存在，已创建并初始化。")
@@ -55,7 +49,6 @@ class Moreapi(Star):
         self.load_game()
     @filter.command("api")
     async def menu(self, event: AstrMessageEvent):
-        img = "./data/plugins/astrbot_plugin_moreapi/menu_output.png"
         new_hashs = api.get_hash()
         new_version = api.get_version()
         if not new_version:
@@ -65,13 +58,15 @@ class Moreapi(Star):
         if new_hashs != self.hashs:
             self.hashs = new_hashs
             self.save()
-            result = api.get_menu()
+            result = api.get_menu(self.menu_path)
         else:
             result = MessageChain()
             result.chain = []
-            result.chain = [Plain(f"MOREAPI菜单：\n"), Image.fromFileSystem(img)]
+            result.chain = [Image.fromFileSystem(self.menu_path)]
         if new_version != self.version:
-            result.chain.append(Plain(f"提示：检测到当前moreapi插件非最新版本，请及时更新\n"))
+            res = MessageChain()
+            res.chain = [Plain(f"提示：检测到当前达莉娅综合群娱插件非最新版本，请及时更新\n")]
+            await event.send(res)
         await event.send(result)
     @filter.command("光遇任务")
     async def trap0(self, event: AstrMessageEvent):

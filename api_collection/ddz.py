@@ -3,8 +3,8 @@ import random
 import time
 from collections import defaultdict
 import json
-from data.plugins.astrbot_plugin_moreapi.api_collection import daliya
-from data.plugins.astrbot_plugin_moreapi.api_collection import pilcreate
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
 op = 0
 class Poker:
     suits = ['♠', '♥', '♦', '♣']

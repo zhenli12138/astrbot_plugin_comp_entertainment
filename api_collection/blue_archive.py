@@ -11,8 +11,8 @@ class Baarchive:
         self.base_url = "https://arona.diyigemt.com/api/v2/image"
         self.cdn_base = "https://arona.cdn.diyigemt.com/image"
         self.small_cdn_base = "https://arona.cdn.diyigemt.com/image/s"
-        self.hash_file = "./data/plugins/astrbot_plugin_moreapi/hash.json"
-        self.apt = "./data/plugins/astrbot_plugin_moreapi/"
+        self.hash_file = "./data/plugins/astrbot_plugin_comp_entertainment/hash.json"
+        self.apt = "./data/plugins/astrbot_plugin_comp_entertainment/"
         self.hash1 = {}
         self.data = {}
 

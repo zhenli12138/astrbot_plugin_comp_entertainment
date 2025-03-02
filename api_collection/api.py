@@ -1,7 +1,7 @@
 from astrbot.api.all import *
 import requests
 
-def get_menu():
+def get_menu(menu_path):
     # API地址
     api_url = "http://116.62.188.107:5000/images/menu"
     try:
@@ -9,7 +9,6 @@ def get_menu():
         response = requests.get(api_url)
         # 将返回的图片内容保存到本地
         image_data = response.content
-        menu_path = f"./data/plugins/astrbot_plugin_moreapi/menu_output.png"
         with open(menu_path, "wb") as file:
             file.write(image_data)
         result = MessageChain()

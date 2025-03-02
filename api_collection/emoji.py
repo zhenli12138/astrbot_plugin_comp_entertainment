@@ -45,11 +45,11 @@ def get_qq_avatar(qq_number):
     # 检查请求是否成功
     if response.status_code == 200:
         image_data = response.content
-        with open(f"./data/plugins/astrbot_plugin_moreapi/pet.jpg", "wb") as file:
+        with open(f"./data/plugins/astrbot_plugin_comp_entertainment/pet.jpg", "wb") as file:
             file.write(image_data)
         result = MessageChain()
         result.chain = []
-        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_moreapi/pet.jpg")]
+        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_comp_entertainment/pet.jpg")]
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
@@ -75,11 +75,11 @@ def fetch_image_from_api(msg):
     if response.status_code == 200:
         # 将返回的图片内容保存到本地
         image_data = response.content
-        with open(f"./data/plugins/astrbot_plugin_moreapi/person.png", "wb") as file:
+        with open(f"./data/plugins/astrbot_plugin_comp_entertainment/person.png", "wb") as file:
             file.write(image_data)
         result = MessageChain()
         result.chain = []
-        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_moreapi/person.png")]
+        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_comp_entertainment/person.png")]
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
@@ -96,11 +96,11 @@ def generate_image12(prompt):
     # 检查请求是否成功
     if response.status_code == 200:
         # 保存返回的图片
-        with open(f"./data/plugins/astrbot_plugin_moreapi/hand.png", "wb") as file:
+        with open(f"./data/plugins/astrbot_plugin_comp_entertainment/hand.png", "wb") as file:
             file.write(response.content)
         result = MessageChain()
         result.chain = []
-        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_moreapi/hand.png")]
+        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_comp_entertainment/hand.png")]
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
@@ -137,9 +137,9 @@ def fetch_image(qq_number, flag):
     result.chain = []
     if response.status_code == 200:
         image_data = response.content
-        with open(f"./data/plugins/astrbot_plugin_moreapi/petemoji.gif", "wb") as file:
+        with open(f"./data/plugins/astrbot_plugin_comp_entertainment/petemoji.gif", "wb") as file:
             file.write(image_data)
-        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_moreapi/petemoji.gif")]
+        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_comp_entertainment/petemoji.gif")]
         return result
     else:
         result.chain.append(Plain(f"表情包制作失败"))
@@ -161,9 +161,9 @@ def fetch_image2(qq_number, qq_number2,msg,msg2):
     response = requests.get(url, params=params)
     if response.status_code == 200:
         image_data = response.content
-        with open(f"./data/plugins/astrbot_plugin_moreapi/p1.gif", "wb") as file:
+        with open(f"./data/plugins/astrbot_plugin_comp_entertainment/p1.gif", "wb") as file:
             file.write(image_data)
-        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_moreapi/p1.gif")]
+        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_comp_entertainment/p1.gif")]
         return result
     else:
         result.chain.append(Plain(f"表情包制作失败"))

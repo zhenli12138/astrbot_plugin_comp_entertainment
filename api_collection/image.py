@@ -96,11 +96,11 @@ def call_api2():
     if response.status_code == 200:
         # 将返回的图片内容保存到本地
         image_data = response.content
-        with open(f"./data/plugins/astrbot_plugin_moreapi/long.png", "wb") as file:
+        with open(f"./data/plugins/astrbot_plugin_comp_entertainment/long.png", "wb") as file:
             file.write(image_data)
         result = MessageChain()
         result.chain = []
-        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_moreapi/long.png")]
+        result.chain = [Image.fromFileSystem("./data/plugins/astrbot_plugin_comp_entertainment/long.png")]
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
@@ -140,7 +140,7 @@ def get_daily_60s_news():
         # 发送GET请求
         response = requests.get(url)
         image_data = response.content
-        output_path = f"./data/plugins/astrbot_plugin_moreapi/daily_60s_news.png"
+        output_path = f"./data/plugins/astrbot_plugin_comp_entertainment/daily_60s_news.png"
         with open(output_path, "wb") as file:
             file.write(image_data)
         result.chain.append(Image.fromFileSystem(output_path))
@@ -195,7 +195,7 @@ def get_ikun_image(lx: str = "bqb"):
         response.raise_for_status()  # 检查请求是否成功
 
         # 将返回的图片保存到本地
-        image_path = f"./data/plugins/astrbot_plugin_moreapi/ikun_{lx}.png"
+        image_path = f"./data/plugins/astrbot_plugin_comp_entertainment/ikun_{lx}.png"
         with open(image_path, "wb") as file:
             file.write(response.content)
         result = MessageChain()
@@ -222,7 +222,7 @@ def get_webpage_screenshot(url):
         response.raise_for_status()  # 检查请求是否成功\
         # 将返回的图片内容保存到本地
         image_data = response.content
-        screenshot_path = f"./data/plugins/astrbot_plugin_moreapi/screenshot.png"
+        screenshot_path = f"./data/plugins/astrbot_plugin_comp_entertainment/screenshot.png"
         with open(screenshot_path, "wb") as file:
             file.write(image_data)
         result = MessageChain()
