@@ -47,7 +47,7 @@ class CompEntertainment(Star):
         else:
             print(f"文件 {self.ddzpath} 已存在，跳过创建。")
         self.load_game()
-    @filter.command("api")
+    @filter.command("菜单")
     async def menu(self, event: AstrMessageEvent):
         new_hashs = api.get_hash()
         new_version = api.get_version()
