@@ -16,10 +16,11 @@ from data.plugins.astrbot_plugin_moreapi.api_collection import api,emoji,image,t
 from data.plugins.astrbot_plugin_moreapi.api_collection import video, music, guangyu, chess, blue_archive
 @register("astrbot_plugin_moreapi", "达莉娅",
           "多功能调用插件，发【api】看菜单",
-          "v1.7.0")
+          "v1.8.2")
 class Moreapi(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
+        self.version = '182'
         self.hashs = ''
         self.config = config
         self.opsss = False
@@ -52,76 +53,25 @@ class Moreapi(Star):
         else:
             print(f"文件 {self.ddzpath} 已存在，跳过创建。")
         self.load_game()
-
-    def load_rooms(self):
-        dicts = []
-        with open(self.file_path, 'r') as f:
-            for line in f:
-                dicts.append(json.loads(line.strip()))
-        # 分配到各自的字典
-        if not dicts:  # 如果 dicts 为空
-            logger.warning("加载的数据为空")
-            return
-        else:
-            self.vitsrooms = dicts[0]
-            return
-
-    def save_rooms(self):
-        with open(self.file_path, 'w') as f:
-            f.write(json.dumps(self.vitsrooms) + '\n')
-
-    def load_game(self):
-        dicts = []
-        with open(self.ddzpath, 'r') as f:
-            for line in f:
-                dicts.append(json.loads(line.strip()))
-        # 分配到各自的字典
-        if not dicts:  # 如果 dicts 为空
-            logger.warning("加载的数据为空")
-            return
-        else:
-            self.rooms = dicts[0]
-            self.player_rooms = dicts[1]
-            return
-
-    def save_game(self):
-        with open(self.ddzpath, 'w') as f:
-            for d in [self.rooms, self.player_rooms]:
-                f.write(json.dumps(d) + '\n')
-    '''---------------------------------------------------'''
-    @command("test")
-    async def test(self, event: AstrMessageEvent):
-        provider = self.context.get_using_provider()
-        if provider:
-            response = await provider.text_chat("你好", session_id=event.session_id)
-            print(response.completion_text)  # LLM 返回的结果
-
-    '''注册一个 LLM 函数工具function-calling 给了大语言模型调用外部工具的能力。
-    注册一个 function-calling 函数工具。
-    请务必按照以下格式编写一个工具（包括函数注释，AstrBot 会尝试解析该函数注释）'''
-    '''---------------------------------------------------'''
-    def load(self):
-        if os.path.exists(self.hashfile):
-            with open(self.hashfile, 'r', encoding='utf-8') as f:
-                self.hashs = json.load(f)
-
-
-    def save(self):
-        with open(self.hashfile, 'w', encoding='utf-8') as f:
-            json.dump(self.hashs, f, ensure_ascii=False, indent=4)
     @filter.command("api")
     async def menu(self, event: AstrMessageEvent):
+        img = "./data/plugins/astrbot_plugin_moreapi/menu_output.png"
         new_hashs = api.get_hash()
+        new_version = api.get_version()
+        if not new_version:
+            new_version = self.version
         if not new_hashs:
             new_hashs = self.hashs
-        img = "./data/plugins/astrbot_plugin_moreapi/menu_output.png"
         if new_hashs != self.hashs:
             self.hashs = new_hashs
             self.save()
             result = api.get_menu()
         else:
-            result = event.make_result()
+            result = MessageChain()
+            result.chain = []
             result.chain = [Plain(f"MOREAPI菜单：\n"), Image.fromFileSystem(img)]
+        if new_version != self.version:
+            result.chain.append(Plain(f"提示：检测到当前moreapi插件非最新版本，请及时更新\n"))
         await event.send(result)
     @filter.command("光遇任务")
     async def trap0(self, event: AstrMessageEvent):
@@ -505,6 +455,51 @@ class Moreapi(Star):
     async def handle_pass(self,event: AstrMessageEvent):
         self.rooms, self.player_rooms = await ddz.handle_pass(event,self.rooms, self.player_rooms)
         self.save_game()
+
+    def load_rooms(self):
+        dicts = []
+        with open(self.file_path, 'r') as f:
+            for line in f:
+                dicts.append(json.loads(line.strip()))
+        # 分配到各自的字典
+        if not dicts:  # 如果 dicts 为空
+            logger.warning("加载的数据为空")
+            return
+        else:
+            self.vitsrooms = dicts[0]
+            return
+
+    def save_rooms(self):
+        with open(self.file_path, 'w') as f:
+            f.write(json.dumps(self.vitsrooms) + '\n')
+
+    def load_game(self):
+        dicts = []
+        with open(self.ddzpath, 'r') as f:
+            for line in f:
+                dicts.append(json.loads(line.strip()))
+        # 分配到各自的字典
+        if not dicts:  # 如果 dicts 为空
+            logger.warning("加载的数据为空")
+            return
+        else:
+            self.rooms = dicts[0]
+            self.player_rooms = dicts[1]
+            return
+
+    def save_game(self):
+        with open(self.ddzpath, 'w') as f:
+            for d in [self.rooms, self.player_rooms]:
+                f.write(json.dumps(d) + '\n')
+
+    def load(self):
+        if os.path.exists(self.hashfile):
+            with open(self.hashfile, 'r', encoding='utf-8') as f:
+                self.hashs = json.load(f)
+
+    def save(self):
+        with open(self.hashfile, 'w', encoding='utf-8') as f:
+            json.dump(self.hashs, f, ensure_ascii=False, indent=4)
 '''
     @llm_tool("Image_Recognition")
     async def trap1566(self, event: AstrMessageEvent, image_url: str) -> MessageEventResult:

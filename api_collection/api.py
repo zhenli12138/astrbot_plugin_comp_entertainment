@@ -31,3 +31,15 @@ def get_hash():
         return data.get("hash")
     else:
         return None
+def get_version():
+    # API地址
+    api_url = "http://116.62.188.107:5000/api/version"
+    # 发送GET请求
+    response = requests.get(api_url)
+    # 检查请求是否成功
+    if response.status_code == 200:
+        # 解析返回的JSON数据
+        data = response.json()
+        return data.get("version")
+    else:
+        return None
