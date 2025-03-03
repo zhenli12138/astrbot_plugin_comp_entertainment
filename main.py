@@ -3,13 +3,15 @@ from astrbot.api.all import *
 from typing import (Dict, Any, Optional, AnyStr, Callable, Union, Awaitable,Coroutine)
 import os
 import json
+import aiohttp
+import asyncio
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
-from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,translate, text, search
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,text, search
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music, guangyu, chess, blue_archive
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
           "达莉娅群娱插件，50+超多功能集成调用插件，持续更新中，发【api】看菜单",
-          "v1.8.2")
+          "v1.8.5")
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -17,7 +19,7 @@ class CompEntertainment(Star):
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
         self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
-        self.version = '184'
+        self.version = '185'
         self.hashs = ''
         self.config = config
         self.opsss = False
@@ -57,7 +59,7 @@ class CompEntertainment(Star):
             new_hashs = self.hashs
         if new_hashs != self.hashs:
             self.hashs = new_hashs
-            await self.save()
+            self.save()
             result = await api.get_menu(self.menu_path)
         else:
             result = MessageChain()
@@ -97,7 +99,7 @@ class CompEntertainment(Star):
     async def trap5(self, event: AstrMessageEvent):
         msg = event.get_message_str()
         parts = msg.split(maxsplit = 1)
-        result = await translate.translate_text(parts[1])
+        result = await text.translate_text(parts[1])
         await event.send(result)
     @filter.command("每日段子")
     async def trap6(self, event: AstrMessageEvent):
@@ -195,8 +197,7 @@ class CompEntertainment(Star):
         await event.send(result)
     @filter.command("搜索b站视频")
     async def trap27(self, event: AstrMessageEvent, msg: str, n:Optional[str]= "1"):
-        result = await video.search_bilibili_video(msg, n)
-        det = await video.movie1()
+        result,det = await video.search_bilibili_video(msg, n)
         voice = MessageChain()
         voice.chain.append(Video.fromURL(det))
         await event.send(voice)
@@ -359,11 +360,11 @@ class CompEntertainment(Star):
         chain2 = [Plain(f"本群插件已经关闭（仅本群）"),Face(id=337)]
         if room in self.vitsrooms:
             self.vitsrooms.remove(room)
-            await self.save_rooms()
+            self.save_rooms()
             yield event.chain_result(chain1)
         else:
             self.vitsrooms.append(room)
-            await self.save_rooms()
+            self.save_rooms()
             yield event.chain_result(chain2)
 
     @filter.command("filter")
@@ -392,7 +393,7 @@ class CompEntertainment(Star):
         chain1 = [Plain(f"TTS启动"),Face(id=337)]
         chain2 = [Plain(f"TTS关闭"),Face(id=337)]
         self.opsss = not self.opsss
-        if self.flag:
+        if self.opsss:
             yield event.chain_result(chain1)
         else:
             yield event.chain_result(chain2)
@@ -407,49 +408,49 @@ class CompEntertainment(Star):
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def exit_game(self,event: AstrMessageEvent):
         self.rooms,self.player_rooms = await ddz.exit_game(event,self.rooms,self.player_rooms)
-        await self.save_game()
+        self.save_game()
     @filter.command("退出房间")
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def exit_room(self, event: AstrMessageEvent):
         self.rooms,self.player_rooms = await ddz.exit_room(event,self.rooms,self.player_rooms)
-        await self.save_game()
+        self.save_game()
     @filter.command("创建房间")
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def create_room_cmd(self,event: AstrMessageEvent):
         self.rooms, self.player_rooms = await ddz.create_room(event, self.rooms, self.player_rooms)
-        await self.save_game()
+        self.save_game()
     @filter.command("加入房间")
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def join_room_cmd(self,event: AstrMessageEvent):
         self.rooms, self.player_rooms = await ddz.join_room(event, self.rooms, self.player_rooms)
-        await self.save_game()
+        self.save_game()
     @filter.command("开始游戏")
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def start_game(self,event: AstrMessageEvent):
         self.rooms, self.player_rooms = await ddz.start_game(event, self.rooms, self.player_rooms)
-        await self.save_game()
+        self.save_game()
     @filter.command('不抢')
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def process_bid1(self, event: AstrMessageEvent):
         self.rooms, self.player_rooms = await ddz.process_bid1(event, self.rooms, self.player_rooms)
-        await self.save_game()
+        self.save_game()
     @filter.command('抢地主')
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def process_bid2(self, event: AstrMessageEvent):
         self.rooms, self.player_rooms = await ddz.process_bid2(event, self.rooms, self.player_rooms)
-        await self.save_game()
+        self.save_game()
     @filter.command('出牌')
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def handle_play(self,event: AstrMessageEvent,cards_str:str):
         self.rooms, self.player_rooms = await ddz.handle_play(event,cards_str,self.rooms, self.player_rooms)
-        await self.save_game()
+        self.save_game()
     @filter.command('pass')
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def handle_pass(self,event: AstrMessageEvent):
         self.rooms, self.player_rooms = await ddz.handle_pass(event,self.rooms, self.player_rooms)
-        await self.save_game()
+        self.save_game()
 
-    async def load_rooms(self):
+    def load_rooms(self):
         dicts = []
         with open(self.file_path, 'r') as f:
             for line in f:
@@ -462,11 +463,11 @@ class CompEntertainment(Star):
             self.vitsrooms = dicts[0]
             return
 
-    async def save_rooms(self):
+    def save_rooms(self):
         with open(self.file_path, 'w') as f:
             f.write(json.dumps(self.vitsrooms) + '\n')
 
-    async def load_game(self):
+    def load_game(self):
         dicts = []
         with open(self.ddzpath, 'r') as f:
             for line in f:
@@ -480,17 +481,17 @@ class CompEntertainment(Star):
             self.player_rooms = dicts[1]
             return
 
-    async def save_game(self):
+    def save_game(self):
         with open(self.ddzpath, 'w') as f:
             for d in [self.rooms, self.player_rooms]:
                 f.write(json.dumps(d) + '\n')
 
-    async def load(self):
+    def load(self):
         if os.path.exists(self.hashfile):
             with open(self.hashfile, 'r', encoding='utf-8') as f:
                 self.hashs = json.load(f)
 
-    async def save(self):
+    def save(self):
         with open(self.hashfile, 'w', encoding='utf-8') as f:
             json.dump(self.hashs, f, ensure_ascii=False, indent=4)
 '''

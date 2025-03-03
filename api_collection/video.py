@@ -43,8 +43,9 @@ async def search_bilibili_video(msg: str, n: str = "1"):
                 result.chain.append(Plain(f"标题: {data.get('title', 'N/A')}\n"))
                 result.chain.append(Plain(f"UP主: {data.get('user', 'N/A')}\n"))
                 result.chain.append(Image.fromURL(data.get('img_url', 'N/A')))
-                global urls1
                 urls1 = data.get('url', 'N/A')
+                global urls1
+                return result,urls1
             else:
                 result.chain.append(Plain("未找到相关视频，请尝试其他关键词。"))
             return result
@@ -54,9 +55,7 @@ async def search_bilibili_video(msg: str, n: str = "1"):
     except requests.exceptions.RequestException as e:
         result.chain.append(Plain(f"请求异常: {e}"))
         return result
-async def movie1():
-    global urls1
-    return urls1
+
 '''
     url = "https://api.lolimi.cn/API/xjj/xjj.php"
     # 发送GET请求
