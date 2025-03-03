@@ -31,15 +31,15 @@ async def easy_send(event: AstrMessageEvent,message: MessageChain):
                     await bot.call_action('send_private_forward_msg', **payload)
             else:
                 msg = await AiocqhttpMessageEvent._parse_onebot_json(MessageChain([seg]))
-                payload = build(msg,message_type, event.message_obj.sender.user_id, event.message_obj.group_id)
+                payload = await build(msg,message_type, event.message_obj.sender.user_id, event.message_obj.group_id)
                 await bot.call_action('send_msg', **payload)
                 await asyncio.sleep(0.5)
     else:
-        payload = build(ret,message_type, event.message_obj.sender.user_id, event.message_obj.group_id)
+        payload = await build(ret,message_type, event.message_obj.sender.user_id, event.message_obj.group_id)
         await bot.call_action('send_msg', **payload)
 
 
-def build(msg, message_type:Optional[str], user_id:Optional[str], group_id:Optional[str], discuss_id:Optional[str]=None) -> dict:
+async def build(msg, message_type:Optional[str], user_id:Optional[str], group_id:Optional[str], discuss_id:Optional[str]=None) -> dict:
     message_dict = {}
     if message_type is not None:
         message_dict['message_type'] = message_type

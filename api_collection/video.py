@@ -1,7 +1,7 @@
 from astrbot.api.all import *
 import requests
 urls1 = ''
-def xjj():
+async def xjj():
     '''发送小姐姐视频/美女视频/抖音视频，当用户需要小姐姐视频，提到有关小姐姐，美女视频，小姐姐视频时调用此工具'''
     api_url = "https://api.kxzjoker.cn/API/Beautyvideo.php"
     params = {
@@ -19,7 +19,7 @@ def xjj():
         result.chain = [Plain(f"请求出错: {e}")]
         return result
 
-def search_bilibili_video(msg: str, n: str = "1"):
+async def search_bilibili_video(msg: str, n: str = "1"):
     '''根据用户提供的关键词搜索B站视频，用户需要搜索B站视频，提到有关搜索B站视频，B站视频时调用此工具
     Args:
         msg (string): 用户提供的关键词，如“少年”
@@ -54,7 +54,7 @@ def search_bilibili_video(msg: str, n: str = "1"):
     except requests.exceptions.RequestException as e:
         result.chain.append(Plain(f"请求异常: {e}"))
         return result
-def movie1():
+async def movie1():
     global urls1
     return urls1
 '''

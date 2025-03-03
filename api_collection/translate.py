@@ -1,6 +1,6 @@
 from astrbot.api.all import *
 import requests
-def translate_text(msg):
+async def translate_text(msg):
     # 接口地址
     '''翻译用户提供的内容文字（翻译为英文）,当用户需要翻译，提到有关翻译什么时调用此工具
     Args:a(string): 用户提供的内容文字（即需要翻译的内容），可以模糊判断

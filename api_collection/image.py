@@ -1,7 +1,7 @@
 from astrbot.api.all import *
 import requests
 from typing import Optional
-def get_random_genshin_cosplay():
+async def get_random_genshin_cosplay():
     # API地址
     url = "https://v2.xxapi.cn/api/yscos"
     try:
@@ -21,7 +21,7 @@ def get_random_genshin_cosplay():
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
-def fetch_cosplay_data():
+async def fetch_cosplay_data():
     '''发送cosplay图片,当用户需要cosplay图片，提到有关cosplay图片，cosplay时调用此工具'''
     # API地址
     url = "https://api.lolimi.cn/API/cosplay/api.php"
@@ -64,7 +64,7 @@ def fetch_cosplay_data():
             print(f"请求失败，状态码: {response.status_code}")
     except requests.exceptions.RequestException as e:
         print(f"请求出错: {e}")
-def call_api():
+async def call_api():
     # 接口地址
     '''发送一张随机的关于原神的图片，用户需要原神图片，提到有关原神图片，原神时调用此工具'''
     url = "https://api.lolimi.cn/API/yuan/api.php"
@@ -87,7 +87,7 @@ def call_api():
         return result
     else:
         print("请求失败，状态码:", response.status_code)
-def call_api2():
+async def call_api2():
     '''发送一张随机的‘龙图‘，用户需要龙图，提到有关龙图时调用此工具’'''
     # 接口地址
     url = "https://api.lolimi.cn/API/longt/l.php"
@@ -104,7 +104,7 @@ def call_api2():
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
-def get_random_superpower():
+async def get_random_superpower():
     '''随机生成超能力及其副作用，用户需要随机超能力，提到有关超能力时调用此工具'''
     # API地址
     url = "https://api.pearktrue.cn/api/superpower/"
@@ -130,7 +130,7 @@ def get_random_superpower():
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
-def get_daily_60s_news():
+async def get_daily_60s_news():
     # API地址
     '''获取每日60秒早报，用户需要每日新闻，提到有关60秒早报,早报，新闻，每日新闻时调用此工具'''
     url = "https://api.52vmy.cn/api/wl/60s"
@@ -149,7 +149,7 @@ def get_daily_60s_news():
         print(f"请求异常: {e}")
         result.chain.append(Plain("获取每日60秒早报失败，请稍后再试。"))
         return result
-def get_doutu_images(msg):
+async def get_doutu_images(msg):
     '''根据用户提供的关键词发送一组斗图图片，用户需要斗图，提到有关斗图时调用此工具
     Args:msg(string): 用户提供的关键词，可以模糊判断'''
     # API地址
@@ -180,7 +180,7 @@ def get_doutu_images(msg):
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
-def get_ikun_image(lx: str = "bqb"):
+async def get_ikun_image(lx: str = "bqb"):
     '''Args:lx(string): 图片类型，可选 bqb（表情包）或 tx（头像），默认为 bqb'''
     # API地址
     url = "https://free.wqwlkj.cn/wqwlapi/ikun.php"
@@ -208,7 +208,7 @@ def get_ikun_image(lx: str = "bqb"):
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
-def get_webpage_screenshot(url):
+async def get_webpage_screenshot(url):
     # API地址
     api_url = "https://api.pearktrue.cn/api/screenweb/"
     # 请求参数
@@ -236,7 +236,7 @@ def get_webpage_screenshot(url):
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
-def get_tarot_reading():
+async def get_tarot_reading():
     '''随机生成塔罗牌占卜结果，用户需要塔罗牌占卜，提到有关塔罗牌时调用此工具'''
     # API地址
     url = "https://oiapi.net/API/Tarot"

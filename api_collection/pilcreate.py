@@ -11,7 +11,7 @@ class Poker:
               '♦': (255, 0, 0), '♣': (0, 0, 0)}
 from PIL import Image, ImageDraw, ImageFont
 
-def generate_menu():
+async def generate_menu():
     # 背景图片路径
     background_image_path = './data/plugins/astrbot_plugin_comp_entertainment/background.jpg'
     if background_image_path:
@@ -69,7 +69,7 @@ def generate_menu():
     img.save(output_path, format='PNG')
     return output_path
 
-def generate_hand_image(cards,idx):
+async def generate_hand_image(cards,idx):
     font = './data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf'
     card_width = 80
     card_height = 120

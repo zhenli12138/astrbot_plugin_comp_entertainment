@@ -1,7 +1,7 @@
 from astrbot.api.all import *
 import requests
 
-def get_menu(menu_path):
+async def get_menu(menu_path):
     # API地址
     api_url = "http://116.62.188.107:5000/images/menu"
     try:
@@ -18,7 +18,7 @@ def get_menu(menu_path):
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
-def get_hash():
+async def get_hash():
     # API地址
     api_url = "http://116.62.188.107:5000/api/menu"
     # 发送GET请求
@@ -30,7 +30,7 @@ def get_hash():
         return data.get("hash")
     else:
         return None
-def get_version():
+async def get_version():
     # API地址
     api_url = "http://116.62.188.107:5000/api/version"
     # 发送GET请求

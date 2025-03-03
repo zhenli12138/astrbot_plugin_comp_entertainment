@@ -1,6 +1,6 @@
 from astrbot.api.all import *
 import requests
-def fetch_daily_tasks():
+async def fetch_daily_tasks():
     '''发送光遇这个游戏的每日任务，当用户需要光遇任务，提到有关光遇，光遇任务时调用此工具'''
     task_type = "rw"  # rw是每日任务
     # 接口地址

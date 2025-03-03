@@ -1,7 +1,7 @@
 from astrbot.api.all import *
 import requests
 from typing import Optional
-def play_gobang(qq: str, group: str, type: str, x: Optional[str] = None, y: Optional[str] = None):
+async def play_gobang(qq: str, group: str, type: str, x: Optional[str] = None, y: Optional[str] = None):
     # API地址
     '''五子棋游戏操作，用户需要五子棋游戏，提到有关五子棋时调用此工具
     Args:

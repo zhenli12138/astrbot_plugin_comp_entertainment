@@ -3,7 +3,7 @@ import requests
 from typing import Optional
 urls1 = ''
 urls2 = ''
-def search_music(song_name: str, n: Optional[int] = None):
+async def search_music(song_name: str, n: Optional[int] = None):
     '''Args:song_name (string): 歌曲名/n (string, optional): 选择对应的歌曲序号，为空返回列表（用户没给出则默认为空，无需要求）'''
     # API地址
     url = "https://www.hhlqilongzhu.cn/api/dg_wyymusic.php"
@@ -45,11 +45,11 @@ def search_music(song_name: str, n: Optional[int] = None):
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
-def search_music2():
+async def search_music2():
     global urls1
-    det = generate_music(urls1)
+    det = await generate_music(urls1)
     return det
-def get_music():
+async def get_music():
     '''给用户发送音乐推荐内容，用户需要音乐推荐，提到有关音乐推荐，音乐时调用此工具'''
     url = "https://api.lolimi.cn/API/wyrp/api.php"
     response = requests.get(url)
@@ -67,11 +67,11 @@ def get_music():
         global urls2
         urls2 = data['data'].get('Url', 'N/A')
         return result
-def search_music3():
+async def search_music3():
     global urls2
-    det = generate_music(urls2)
+    det = await generate_music(urls2)
     return det
-def generate_music(url):
+async def generate_music(url):
     response = requests.get(url)
     # 检查请求是否成功
     if response.status_code == 200:
@@ -81,7 +81,7 @@ def generate_music(url):
         return "./data/plugins/astrbot_plugin_comp_entertainment/music.mp3"
     else:
         print(f"下载失败，状态码: {response.status_code}")
-def generate_voice(text: str, model: str):
+async def generate_voice(text: str, model: str):
     '''根据用户提供的文本生成语音，用户需要生成语音，提到有关语音合成时调用此工具
     Args:
         text (string): 用户提供的文本内容，支持中英日三语，超过200字符会自动切割。

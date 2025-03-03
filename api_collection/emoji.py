@@ -1,7 +1,7 @@
 from astrbot.api.all import *
 import requests
 import random
-def mix_emojis(emoji1: str, emoji2: str):
+async def mix_emojis(emoji1: str, emoji2: str):
     # API地址
     url = "https://free.wqwlkj.cn/wqwlapi/emojimix.php"
     # 请求参数
@@ -30,7 +30,7 @@ def mix_emojis(emoji1: str, emoji2: str):
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
-def get_qq_avatar(qq_number):
+async def get_qq_avatar(qq_number):
     # API地址
     url = "https://api.lolimi.cn/API/head/api.php"
 
@@ -53,12 +53,12 @@ def get_qq_avatar(qq_number):
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
-def parse_target(event):
+async def parse_target(event):
     """解析@目标或用户名"""
     for comp in event.message_obj.message:
         if isinstance(comp, At) and event.get_self_id() != str(comp.qq):
             return str(comp.qq)
-def fetch_image_from_api(msg):
+async def fetch_image_from_api(msg):
     # API地址
     '''根据用户要求的文字内容发送一张小人举牌图片，用户需要小人举牌图片，提到有关小人举牌，小人举牌图片，举牌时调用此工具
     Args:a(string): 用户提到的文字内容，可以模糊判断'''
@@ -83,7 +83,7 @@ def fetch_image_from_api(msg):
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
-def generate_image12(prompt):
+async def generate_image12(prompt):
     '''根据用户提到的文字内容发送一张手写的该文字内容的图片，用户需要手写图片，提到有关手写图片，手写时调用此工具
     Args:a(string): 用户提到的文字内容，可以模糊判断'''
     url = "https://api.52vmy.cn/api/img/tw"
@@ -104,7 +104,7 @@ def generate_image12(prompt):
         return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
-def fetch_image(qq_number, flag):
+async def fetch_image(qq_number, flag):
     # 摸头
     # 定义字典映射
     switch_dict = {
@@ -145,7 +145,7 @@ def fetch_image(qq_number, flag):
         result.chain.append(Plain(f"表情包制作失败"))
         return result
 
-def fetch_image2(qq_number, qq_number2,msg,msg2):
+async def fetch_image2(qq_number, qq_number2,msg,msg2):
     url = "https://api.lolimi.cn/API/preview/api.php"
     # 生成 1 到 10 之间的随机整数
     types = random.randint(1, 166)
@@ -169,7 +169,7 @@ def fetch_image2(qq_number, qq_number2,msg,msg2):
         result.chain.append(Plain(f"表情包制作失败"))
         return result
 
-def parse_target2(event,ids):
+async def parse_target2(event,ids):
     for comp in event.message_obj.message:
         if isinstance(comp, At) and event.get_self_id() != str(comp.qq) and ids!= str(comp.qq):
             return str(comp.qq)

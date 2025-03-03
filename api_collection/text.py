@@ -1,7 +1,7 @@
 import re
 from astrbot.api.all import *
 import requests
-def get_random_text():
+async def get_random_text():
     url = "https://api.lolimi.cn/API/yiyan/dz.php"
     try:
         response = requests.get(url)
@@ -12,7 +12,7 @@ def get_random_text():
     except requests.exceptions.RequestException as e:
         return f"请求失败: {e}"
 
-def get_dujitang():
+async def get_dujitang():
     url = "https://api.lolimi.cn/API/du/api.php"
     params = {
         "type": "json"  # 你可以根据需要选择返回格式，这里选择json
@@ -33,7 +33,7 @@ def get_dujitang():
 
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
-def movie():
+async def movie():
     '''发送电影票房排行榜单,当用户需要电影票房排行榜单，提到有关电影票房时调用此工具'''
     # 接口地址
     url = "https://api.lolimi.cn/API/piao/dy.php"
@@ -53,7 +53,7 @@ def movie():
             return result
     else:
         print(f"请求失败，状态码: {response.status_code}")
-def get_random_text2():
+async def get_random_text2():
     '''发送一段温柔语录的文字内容，用户需要温柔语录，提到有关温柔语录时调用此工具'''
     url = "https://api.lolimi.cn/API/wryl/api.php"
     try:
@@ -65,7 +65,7 @@ def get_random_text2():
         return result
     except requests.exceptions.RequestException as e:
         return f"请求失败: {e}"
-def get_tv_show_heat_ranking():
+async def get_tv_show_heat_ranking():
     '''获取当前电视剧热度排行榜，用户需要电视剧排行榜，提到有关电视剧热度，电视剧排行，电视剧时调用此工具'''
     # API地址
     url = "https://api.52vmy.cn/api/wl/top/tv"
@@ -85,7 +85,7 @@ def get_tv_show_heat_ranking():
         result.chain.append(Plain(f"请求异常: {e}"))
         return result
 
-def remove_complex_emoticons(text):
+async def remove_complex_emoticons(text):
     pattern = r"""
             \([^()]+\)              # 匹配括号内的复杂颜表情
             |                       # 或
