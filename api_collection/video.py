@@ -1,6 +1,5 @@
 from astrbot.api.all import *
 import requests
-urls1 = ''
 async def xjj():
     '''发送小姐姐视频/美女视频/抖音视频，当用户需要小姐姐视频，提到有关小姐姐，美女视频，小姐姐视频时调用此工具'''
     api_url = "https://api.kxzjoker.cn/API/Beautyvideo.php"
@@ -44,7 +43,6 @@ async def search_bilibili_video(msg: str, n: str = "1"):
                 result.chain.append(Plain(f"UP主: {data.get('user', 'N/A')}\n"))
                 result.chain.append(Image.fromURL(data.get('img_url', 'N/A')))
                 urls1 = data.get('url', 'N/A')
-                global urls1
                 return result,urls1
             else:
                 result.chain.append(Plain("未找到相关视频，请尝试其他关键词。"))
