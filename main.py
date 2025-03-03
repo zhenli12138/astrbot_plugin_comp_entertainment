@@ -17,7 +17,7 @@ class CompEntertainment(Star):
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
         self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
-        self.version = '183'
+        self.version = '184'
         self.hashs = ''
         self.config = config
         self.opsss = False
@@ -126,8 +126,7 @@ class CompEntertainment(Star):
         await event.send(result)
     @filter.command("音乐推荐")
     async def trap12(self, event: AstrMessageEvent):
-        result = await music.get_music()
-        det = await music.search_music3()
+        result,det= await music.get_music()
         voice = MessageChain()
         voice.chain.append(Record(file=det))
         await event.send(voice)
@@ -179,8 +178,7 @@ class CompEntertainment(Star):
         await event.send(result)
     @filter.command("音乐")
     async def trap24(self, event: AstrMessageEvent,n: int):
-        result = await music.search_music(self.song_name, n)
-        det = await music.search_music2()
+        result,det = await music.search_music(self.song_name, n)
         voice = MessageChain()
         voice.chain.append(Record(file=det))
         await event.send(voice)

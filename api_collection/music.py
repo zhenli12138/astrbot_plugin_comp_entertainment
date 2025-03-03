@@ -31,7 +31,8 @@ async def search_music(song_name: str, n: Optional[int] = None):
                 #result.chain.append(Plain(f"歌词: {data.get('lrc', 'N/A')}\n"))
                 global urls1
                 urls1 = data.get('music_url', 'N/A')
-                return result
+                det = await generate_music(urls1)
+                return result,det
             else:
                 # 返回歌曲列表
                 result.chain.append(Plain(f"找到以下歌曲:\n"))
@@ -45,10 +46,7 @@ async def search_music(song_name: str, n: Optional[int] = None):
     except requests.exceptions.RequestException as e:
         print(f"请求异常: {e}")
         return None
-async def search_music2():
-    global urls1
-    det = await generate_music(urls1)
-    return det
+
 async def get_music():
     '''给用户发送音乐推荐内容，用户需要音乐推荐，提到有关音乐推荐，音乐时调用此工具'''
     url = "https://api.lolimi.cn/API/wyrp/api.php"
@@ -66,11 +64,8 @@ async def get_music():
         result.chain.append(Plain(f"Nick: {data['data'].get('Nick', 'N/A')}\n"))
         global urls2
         urls2 = data['data'].get('Url', 'N/A')
-        return result
-async def search_music3():
-    global urls2
-    det = await generate_music(urls2)
-    return det
+        det = await generate_music(urls2)
+        return result,det
 async def generate_music(url):
     response = requests.get(url)
     # 检查请求是否成功
