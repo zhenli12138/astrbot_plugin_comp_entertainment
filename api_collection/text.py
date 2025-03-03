@@ -2,7 +2,6 @@ import re
 from astrbot.api.all import *
 import requests
 import aiohttp
-from your_module import MessageChain, Plain  # 请根据实际情况导入 MessageChain 和 Plain
 
 async def get_random_text():
     url = "https://api.lolimi.cn/API/yiyan/dz.php"
