@@ -3,7 +3,6 @@ import requests
 from typing import Optional
 import aiohttp
 from typing import Optional
-from your_module import MessageChain, Plain, Image, Record  # 请根据实际情况导入相应的类
 
 async def search_music(song_name: str, n: Optional[int] = None):
     '''Args:song_name (string): 歌曲名/n (string, optional): 选择对应的歌曲序号，为空返回列表（用户没给出则默认为空，无需要求）'''
