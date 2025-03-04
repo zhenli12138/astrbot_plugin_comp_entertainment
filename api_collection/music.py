@@ -3,7 +3,7 @@ import requests
 from typing import Optional
 import aiohttp
 from typing import Optional
-
+import httpx
 async def search_music(song_name: str, n: Optional[int] = None):
     '''Args:song_name (string): 歌曲名/n (string, optional): 选择对应的歌曲序号，为空返回列表（用户没给出则默认为空，无需要求）'''
     # API地址
@@ -83,49 +83,27 @@ async def get_music():
     except aiohttp.ClientError as e:
         result.chain.append(Plain(f"请求异常: {e}"))
         return result, det
-async def download_audio(url, output_file):
-    # 创建 aiohttp 客户端会话
-    async with aiohttp.ClientSession() as session:
-        # 发送 GET 请求
-        async with session.get(url) as response:
-            # 检查请求是否成功
-            if response.status == 200:
-                # 读取响应内容并写入文件
-                with open(output_file, "wb") as file:
-                    while True:
-                        # 分块读取数据
-                        chunk = await response.content.read(1024)
-                        if not chunk:
-                            break
-                        file.write(chunk)
-                print(f"音频文件已下载并保存为: {output_file}")
-            else:
-                print(f"下载失败，状态码: {response.status}")
 async def generate_music(url):
     result = MessageChain()
     result.chain = []
     try:
-        # 使用 aiohttp 发送异步 GET 请求
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                # 检查请求是否成功
-                if response.status == 200:
-                    # 保存音乐文件到本地
-                    with open("./data/plugins/astrbot_plugin_comp_entertainment/music.mp3", "wb") as file:
-                        while True:
-                            # 分块读取数据
-                            chunk = await response.content.read(1024)
-                            if not chunk:
-                                break
-                            file.write(chunk)
-                    return "./data/plugins/astrbot_plugin_comp_entertainment/music.mp3"
-                else:
-                    result.chain.append(Plain(f"下载失败，状态码: {response.status}"))
-                    return result
-    except aiohttp.ClientError as e:
+        # 使用 httpx 发送异步 GET 请求
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            # 检查请求是否成功
+            if response.status_code == 200:
+                # 保存音乐文件到本地
+                with open("./data/plugins/astrbot_plugin_comp_entertainment/music.mp3", "wb") as file:
+                    # 分块读取数据
+                    async for chunk in response.aiter_bytes():
+                        file.write(chunk)
+                return "./data/plugins/astrbot_plugin_comp_entertainment/music.mp3"
+            else:
+                result.chain.append(Plain(f"下载失败，状态码: {response.status_code}"))
+                return result
+    except httpx.RequestError as e:
         result.chain.append(Plain(f"请求异常: {e}"))
         return result
-
 async def generate_voice(text: str, model: str):
     '''根据用户提供的文本生成语音，用户需要生成语音，提到有关语音合成时调用此工具
     Args:
