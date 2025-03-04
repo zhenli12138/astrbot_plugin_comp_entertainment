@@ -10,8 +10,8 @@ from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcre
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,text, search
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music,chess, blue_archive
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
-          "达莉娅群娱插件，50+超多功能集成调用插件，持续更新中，发【api】看菜单",
-          "v1.8.5")
+          "达莉娅群娱插件，50+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
+          "v1.9.0")
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -19,7 +19,7 @@ class CompEntertainment(Star):
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
         self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
-        self.version = '189'
+        self.version = '190'
         self.hashs = ''
         self.config = config
         self.opsss = False
@@ -67,7 +67,9 @@ class CompEntertainment(Star):
             result.chain = [Image.fromFileSystem(self.menu_path)]
         if new_version != self.version:
             res = MessageChain()
-            res.chain = [Plain(f"提示：检测到当前达莉娅综合群娱插件非最新版本，请及时更新\n")]
+            old_version = f"v{self.version[0]}.{self.version[1]}.{self.version[2]}"
+            new_version = f"v{new_version[0]}.{new_version[1]}.{new_version[2]}"
+            res.chain = [Plain(f"提示：达莉娅综合群娱插件当前版本为{old_version}，最新版本为{new_version},请及时更新\n")]
             await event.send(res)
         await event.send(result)
     @filter.command("光遇任务")
