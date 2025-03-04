@@ -74,6 +74,7 @@ async def get_music():
                     result.chain.append(Plain(f"Content: {data['data'].get('Content', 'N/A')}\n"))
                     result.chain.append(Plain(f"Nick: {data['data'].get('Nick', 'N/A')}\n"))
                     urls2 = data['data'].get('Url', 'N/A')
+                    print(urls2)
                     det = await generate_music(urls2)
                     return result, det
                 else:
@@ -82,7 +83,24 @@ async def get_music():
     except aiohttp.ClientError as e:
         result.chain.append(Plain(f"请求异常: {e}"))
         return result, det
-
+async def download_audio(url, output_file):
+    # 创建 aiohttp 客户端会话
+    async with aiohttp.ClientSession() as session:
+        # 发送 GET 请求
+        async with session.get(url) as response:
+            # 检查请求是否成功
+            if response.status == 200:
+                # 读取响应内容并写入文件
+                with open(output_file, "wb") as file:
+                    while True:
+                        # 分块读取数据
+                        chunk = await response.content.read(1024)
+                        if not chunk:
+                            break
+                        file.write(chunk)
+                print(f"音频文件已下载并保存为: {output_file}")
+            else:
+                print(f"下载失败，状态码: {response.status}")
 async def generate_music(url):
     result = MessageChain()
     result.chain = []
@@ -94,7 +112,12 @@ async def generate_music(url):
                 if response.status == 200:
                     # 保存音乐文件到本地
                     with open("./data/plugins/astrbot_plugin_comp_entertainment/music.mp3", "wb") as file:
-                        file.write(await response.read())
+                        while True:
+                            # 分块读取数据
+                            chunk = await response.content.read(1024)
+                            if not chunk:
+                                break
+                            file.write(chunk)
                     return "./data/plugins/astrbot_plugin_comp_entertainment/music.mp3"
                 else:
                     result.chain.append(Plain(f"下载失败，状态码: {response.status}"))

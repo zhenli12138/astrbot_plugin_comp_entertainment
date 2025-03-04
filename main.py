@@ -8,7 +8,7 @@ import asyncio
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,text, search
-from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music, guangyu, chess, blue_archive
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music,chess, blue_archive
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
           "达莉娅群娱插件，50+超多功能集成调用插件，持续更新中，发【api】看菜单",
           "v1.8.5")
@@ -19,7 +19,7 @@ class CompEntertainment(Star):
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
         self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
-        self.version = '188'
+        self.version = '189'
         self.hashs = ''
         self.config = config
         self.opsss = False
@@ -72,7 +72,7 @@ class CompEntertainment(Star):
         await event.send(result)
     @filter.command("光遇任务")
     async def trap0(self, event: AstrMessageEvent):
-        result = await guangyu.fetch_daily_tasks()
+        result = await search.fetch_daily_tasks()
         await event.send(result)
     @filter.command("小姐姐视频")
     async def trap1(self, event: AstrMessageEvent):
