@@ -100,10 +100,8 @@ async def generate_music(url):
                 return "./data/plugins/astrbot_plugin_comp_entertainment/music.mp3"
             else:
                 print(f"下载失败，状态码: {response.status_code}")
-                return result
     except httpx.RequestError as e:
         print(f"请求异常: {e}")
-        return result
 async def generate_voice(text: str, model: str):
     '''根据用户提供的文本生成语音，用户需要生成语音，提到有关语音合成时调用此工具
     Args:
