@@ -89,7 +89,7 @@ async def generate_music(url):
     try:
         # 使用 httpx 发送异步 GET 请求
         async with httpx.AsyncClient() as client:
-            response = await client.get(url)
+            response = await client.get(url,follow_redirects=True)
             # 检查请求是否成功
             if response.status_code == 200:
                 # 保存音乐文件到本地
@@ -99,10 +99,10 @@ async def generate_music(url):
                         file.write(chunk)
                 return "./data/plugins/astrbot_plugin_comp_entertainment/music.mp3"
             else:
-                result.chain.append(Plain(f"下载失败，状态码: {response.status_code}"))
+                print(f"下载失败，状态码: {response.status_code}")
                 return result
     except httpx.RequestError as e:
-        result.chain.append(Plain(f"请求异常: {e}"))
+        print(f"请求异常: {e}")
         return result
 async def generate_voice(text: str, model: str):
     '''根据用户提供的文本生成语音，用户需要生成语音，提到有关语音合成时调用此工具
