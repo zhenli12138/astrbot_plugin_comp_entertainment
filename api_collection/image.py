@@ -54,8 +54,7 @@ async def fetch_cosplay_data():
                             reg = Nodes(dist)
                             dat.append(reg)
                             dist.clear()
-                        result.chain.append(Plain(f"获取成功: {dat}"))
-                        return result
+                        return dat
                     else:
                         result.chain.append(Plain(f"获取失败: {data.get('text')}"))
                         return result

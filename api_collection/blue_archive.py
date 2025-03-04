@@ -2,8 +2,6 @@ import urllib.request
 from typing import List, Dict, Optional
 from urllib.parse import quote
 from astrbot.api.all import *
-import os
-import requests
 import aiohttp
 import os
 from urllib.parse import quote, urlsplit, urlunsplit

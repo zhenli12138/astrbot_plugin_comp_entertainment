@@ -1,6 +1,5 @@
 import re
 from astrbot.api.all import *
-import requests
 import aiohttp
 
 async def get_random_text():

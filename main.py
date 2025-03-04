@@ -19,7 +19,7 @@ class CompEntertainment(Star):
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
         self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
-        self.version = '187'
+        self.version = '188'
         self.hashs = ''
         self.config = config
         self.opsss = False
@@ -91,17 +91,20 @@ class CompEntertainment(Star):
         dat = await image.fetch_cosplay_data()
         result = MessageChain()
         result.chain = []
-        for reg in dat:
-            result.chain.append(reg)
-            await event.send(result)
-            result.chain = []
+        try:
+            for reg in dat:
+                result.chain.append(reg)
+                await event.send(result)
+                result.chain = []
+        except:
+            await event.send(dat)
     @filter.command("翻译")
     async def trap5(self, event: AstrMessageEvent):
         msg = event.get_message_str()
         parts = msg.split(maxsplit = 1)
         result = await text.translate_text(parts[1])
         await event.send(result)
-    @filter.command("每日段子")
+    @filter.command("随机段子")
     async def trap6(self, event: AstrMessageEvent):
         result = await text.get_random_text()
         await event.send(result)

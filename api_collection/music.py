@@ -58,6 +58,7 @@ async def get_music():
     url = "https://api.lolimi.cn/API/wyrp/api.php"
     result = MessageChain()
     result.chain = []
+    det =''
     try:
         # 使用 aiohttp 发送异步 GET 请求
         async with aiohttp.ClientSession() as session:
@@ -77,10 +78,10 @@ async def get_music():
                     return result, det
                 else:
                     result.chain.append(Plain(f"请求失败，状态码: {response.status}"))
-                    return result
+                    return result, det
     except aiohttp.ClientError as e:
         result.chain.append(Plain(f"请求异常: {e}"))
-        return result
+        return result, det
 
 async def generate_music(url):
     result = MessageChain()

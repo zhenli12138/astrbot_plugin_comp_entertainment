@@ -7,6 +7,8 @@ async def fetch_daily_tasks():
     task_type = "rw"  # rw是每日任务
     url = "https://api.lolimi.cn/API/gy/"  # 接口地址
     params = {'type': task_type}  # 请求参数
+    result = MessageChain()
+    result.chain = []
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as response:
@@ -14,19 +16,21 @@ async def fetch_daily_tasks():
                 if response.status == 200:
                     # 解析返回的JSON数据
                     data = await response.json()
-                    result = MessageChain()
-                    result.chain = [Plain(f"Nowtime: {data['nowtime']}\n")]
+                    result.chain.append(Plain(f"Nowtime: {data['nowtime']}\n"))
 
-                    # 打印每日任务
                     for key, value in data.items():
                         if key.isdigit():
                             result.chain.append(Plain(f"Task {key}: {value[0]}"))
-                            result.chain.append(await Image.fromURL(value[1]))  # 假设 Image.fromURL 是异步方法
+                            result.chain.append(Image.fromURL(value[1]))  # 假设 Image.fromURL 是异步方法
 
                     return result
                 else:
-                    logger.error(f"Failed to fetch data. Status code: {response.status}")
+                    result.chain = [Plain(f"请求失败，状态码: {response.status}")]
+                    return result
     except aiohttp.ClientError as e:
-        logger.error(f"Request failed: {e}")
+        result.chain = [Plain(f"请求异常: {e}")]
+        return result
     except ValueError as e:
-        logger.error(f"JSON decode error: {e}")
+        result.chain = [Plain(f"JSON 解析错误: {e}")]
+        return result
+
