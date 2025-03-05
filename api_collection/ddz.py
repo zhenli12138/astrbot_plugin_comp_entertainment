@@ -297,6 +297,7 @@ async def bid(event: AstrMessageEvent, rooms, player_rooms):
             Plain(f"当前玩家：{rooms[room_id]['game']['current_player']} 请出牌\n"),
             At(qq=user_id),  # At 消息发送者
         ]
+        await lookcard(event,rooms[room_id]['game']['dizhu'],rooms,player_rooms)
         await event.send(result)
         return rooms, player_rooms
     else:
