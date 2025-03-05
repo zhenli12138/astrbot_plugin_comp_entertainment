@@ -20,7 +20,7 @@ class CompEntertainment(Star):
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
         self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
-        self.version = '190'
+        self.version = '192'
         self.hashs = ''
         self.config = config
         self.opsss = False
