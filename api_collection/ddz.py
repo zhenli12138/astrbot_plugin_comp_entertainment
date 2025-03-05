@@ -204,7 +204,7 @@ async def lookcard(event: AstrMessageEvent,user_id,rooms,player_rooms):
     players = rooms[room_id]['players']
     if user_id in players:
         idx = players.index(user_id)
-        hand_img = pilcreate.generate_hand_image(rooms[room_id]['game']['hands'][user_id],idx)
+        hand_img = await pilcreate.generate_hand_image(rooms[room_id]['game']['hands'][user_id],idx)
         result = MessageChain()
         result.chain = [Plain(f"您的手牌为："),Image.fromFileSystem(hand_img)]
         logger.info(rooms[room_id]['game']['hands'][user_id])
