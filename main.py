@@ -5,7 +5,7 @@ import os
 import json
 import aiohttp
 import asyncio
-from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz, deer
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,text, search
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music,chess, blue_archive
@@ -15,6 +15,7 @@ from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video,
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
+        self.deerpipe = deer.Deer()
         self.menu_path = "./data/plugins/astrbot_plugin_comp_entertainment/menu_output.png"
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
         self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
@@ -72,6 +73,9 @@ class CompEntertainment(Star):
             res.chain = [Plain(f"提示：达莉娅综合群娱插件当前版本为{old_version}，最新版本为{new_version},请及时更新\n")]
             await event.send(res)
         await event.send(result)
+
+    '''API功能部分'''
+
     @filter.command("光遇任务")
     async def trap0(self, event: AstrMessageEvent):
         result = await search.fetch_daily_tasks()
@@ -179,9 +183,12 @@ class CompEntertainment(Star):
         result = await image.get_random_genshin_cosplay()
         await event.send(result)
     @filter.command("搜索音乐")
-    async def trap23(self, event: AstrMessageEvent, song_name: str, n: Optional[str] = None):
+    async def trap23(self, event: AstrMessageEvent):
+        msg = event.get_message_str()
+        parts = msg.split(maxsplit = 2)
+        song_name = parts[1]
         self.song_name = song_name
-        result = await music.search_music(song_name, n)
+        result = await music.search_music(song_name)
         await event.send(result)
     @filter.command("音乐")
     async def trap24(self, event: AstrMessageEvent,n: int):
@@ -228,6 +235,9 @@ class CompEntertainment(Star):
         ba = blue_archive.Baarchive()
         result = await ba.handle_blue_archive(a)
         await event.send(result)
+
+    '''表情包制作功能部分'''
+
     @filter.command("随机制作")
     async def emoji0(self, event: AstrMessageEvent,msg:Optional[str] = '',msg2:Optional[str] = ''):
         ids = await emoji.parse_target(event)
@@ -324,6 +334,91 @@ class CompEntertainment(Star):
         ids = await emoji.parse_target(event)
         data = await emoji.fetch_image(ids, "点赞")
         await event.send(data)
+
+    '''鹿管功能部分'''
+
+    @filter.command("购买")
+    async def buy(self, event: AstrMessageEvent, item_name: str):
+        await deer.Deer.buy_item(self.deerpipe,event,item_name)
+    @filter.command("使用")
+    async def use(self, event: AstrMessageEvent, item_name: str):
+        await deer.Deer.use_item(self.deerpipe, event, item_name)
+    @filter.command("鹿")
+    async def deer_sign_in(self, event: AstrMessageEvent):
+        await deer.Deer.deer_sign_in(self.deerpipe, event)
+    @filter.command("帮鹿")
+    async def help_sign_in(self, event: AstrMessageEvent):
+        await deer.Deer.help_sign_in(self.deerpipe, event)
+    @filter.command("戴锁")
+    async def toggle_lock(self, event: AstrMessageEvent):
+        await deer.Deer.toggle_lock(self.deerpipe, event)
+    @filter.command("看鹿")
+    async def view_calendar(self, event: AstrMessageEvent):
+        await deer.Deer.view_calendar(self.deerpipe, event)
+    @filter.command("鹿榜")
+    async def leaderboard(self, event: AstrMessageEvent):
+        await deer.Deer.leaderboard(self.deerpipe, event)
+    @filter.command("补鹿")
+    async def resign(self, event: AstrMessageEvent, day: int, target_user: Optional[str] = None):
+        await deer.Deer.resign(self.deerpipe,event, day, target_user)
+    @filter.command("戒鹿")
+    async def cancel_sign_in(self, event: AstrMessageEvent, day: Optional[int] = None):
+        await deer.Deer.cancel_sign_in(self.deerpipe, event, day)
+
+    '''斗地主功能部分'''
+
+    @filter.command("斗地主")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def ddz_menu(self, event: AstrMessageEvent):
+        img = await pilcreate.generate_menu()
+        result = MessageChain()
+        result.chain = [Image.fromFileSystem(img)]
+        yield event.image_result(img)
+    @filter.command("结束游戏")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def exit_game(self,event: AstrMessageEvent):
+        self.rooms,self.player_rooms = await ddz.exit_game(event,self.rooms,self.player_rooms)
+        self.save_game()
+    @filter.command("退出房间")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def exit_room(self, event: AstrMessageEvent):
+        self.rooms,self.player_rooms = await ddz.exit_room(event,self.rooms,self.player_rooms)
+        self.save_game()
+    @filter.command("创建房间")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def create_room_cmd(self,event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.create_room(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command("加入房间")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def join_room_cmd(self,event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.join_room(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command("开始游戏")
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def start_game(self,event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.start_game(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command('不抢')
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def process_bid1(self, event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.process_bid1(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command('抢地主')
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def process_bid2(self, event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.process_bid2(event, self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command('出牌')
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def handle_play(self,event: AstrMessageEvent,cards_str:str):
+        self.rooms, self.player_rooms = await ddz.handle_play(event,cards_str,self.rooms, self.player_rooms)
+        self.save_game()
+    @filter.command('pass')
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def handle_pass(self,event: AstrMessageEvent):
+        self.rooms, self.player_rooms = await ddz.handle_pass(event,self.rooms, self.player_rooms)
+        self.save_game()
     @filter.on_decorating_result(priority=100)
     async def voice(self, event: AstrMessageEvent):
         result = event.get_result()
@@ -402,58 +497,7 @@ class CompEntertainment(Star):
             yield event.chain_result(chain1)
         else:
             yield event.chain_result(chain2)
-    @filter.command("斗地主")
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def ddz_menu(self, event: AstrMessageEvent):
-        img = await pilcreate.generate_menu()
-        result = MessageChain()
-        result.chain = [Image.fromFileSystem(img)]
-        yield event.image_result(img)
-    @filter.command("结束游戏")
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def exit_game(self,event: AstrMessageEvent):
-        self.rooms,self.player_rooms = await ddz.exit_game(event,self.rooms,self.player_rooms)
-        self.save_game()
-    @filter.command("退出房间")
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def exit_room(self, event: AstrMessageEvent):
-        self.rooms,self.player_rooms = await ddz.exit_room(event,self.rooms,self.player_rooms)
-        self.save_game()
-    @filter.command("创建房间")
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def create_room_cmd(self,event: AstrMessageEvent):
-        self.rooms, self.player_rooms = await ddz.create_room(event, self.rooms, self.player_rooms)
-        self.save_game()
-    @filter.command("加入房间")
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def join_room_cmd(self,event: AstrMessageEvent):
-        self.rooms, self.player_rooms = await ddz.join_room(event, self.rooms, self.player_rooms)
-        self.save_game()
-    @filter.command("开始游戏")
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def start_game(self,event: AstrMessageEvent):
-        self.rooms, self.player_rooms = await ddz.start_game(event, self.rooms, self.player_rooms)
-        self.save_game()
-    @filter.command('不抢')
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def process_bid1(self, event: AstrMessageEvent):
-        self.rooms, self.player_rooms = await ddz.process_bid1(event, self.rooms, self.player_rooms)
-        self.save_game()
-    @filter.command('抢地主')
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def process_bid2(self, event: AstrMessageEvent):
-        self.rooms, self.player_rooms = await ddz.process_bid2(event, self.rooms, self.player_rooms)
-        self.save_game()
-    @filter.command('出牌')
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def handle_play(self,event: AstrMessageEvent,cards_str:str):
-        self.rooms, self.player_rooms = await ddz.handle_play(event,cards_str,self.rooms, self.player_rooms)
-        self.save_game()
-    @filter.command('pass')
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def handle_pass(self,event: AstrMessageEvent):
-        self.rooms, self.player_rooms = await ddz.handle_pass(event,self.rooms, self.player_rooms)
-        self.save_game()
+
 
     def load_rooms(self):
         dicts = []
