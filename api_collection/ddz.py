@@ -15,8 +15,8 @@ class Poker:
 
 async def exit_game(event: AstrMessageEvent,rooms,player_rooms):
     room_id = event.get_group_id()
-    rooms.pop(room_id, None)
     players = rooms[room_id]['players']
+    rooms.pop(room_id, None)
     for p in players:
         player_rooms.pop(p, None)
     result = MessageChain()
