@@ -23,7 +23,7 @@ class CompEntertainment(Star):
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
         self.song_name = None
         # 菜单配置
-        self.version = '195'
+        self.version = '196'
         self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
