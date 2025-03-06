@@ -397,7 +397,7 @@ class Deer:
     async def get_leader_records(self) -> List[Dict]:
         records = []
         try:
-            with open("deerpipe.jsonl", "r") as f:
+            with open("./data/plugins/astrbot_plugin_comp_entertainment/deerpipe.jsonl", "r") as f:
                 for line in f:
                     record = json.loads(line.strip())
                     records.append(record)
