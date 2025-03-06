@@ -221,3 +221,4 @@ async def parse_target(event):
     for comp in event.message_obj.message:
         if isinstance(comp, At) and event.get_self_id() != str(comp.qq):
             return str(comp.qq)
+    return None

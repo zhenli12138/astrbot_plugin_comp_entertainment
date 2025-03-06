@@ -140,8 +140,7 @@ class Deer:
         for comp in event.message_obj.message:
             if isinstance(comp, At) and event.get_self_id() != str(comp.qq):
                 return str(comp.qq)
-            else:
-                return None
+        return None
 
     async def reset_user_record(self, user_id: str,recordtime: str):
         '''重置用户记录（保留货币和道具）'''
@@ -241,6 +240,7 @@ class Deer:
             return
         #
         await self.update_sign_in_record(record, day)
+        record = await self.get_user_record(user_id)
         times = await self.get_sign_in_record(record, day)
         reward = self.cost_table["checkin_reward"]["鹿"]["cost"]
         await self.modify_currency(user_id, reward)
