@@ -5,7 +5,8 @@ import datetime
 import os
 from typing import List, Dict, Optional
 from typing import List, Dict
-from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate, daliya
+
 
 class JsonlDatabase:
     def __init__(self, file_path: str):
@@ -141,7 +142,15 @@ class Deer:
             if isinstance(comp, At) and event.get_self_id() != str(comp.qq):
                 return str(comp.qq)
         return None
-
+    async def get_sign_in_record(self, user_id, day: int):
+        '''检查签到次数是否达到上限'''
+        record = await self.database.get_user(user_id)
+        day_record = next((d for d in record["checkindate"] if d.startswith(f"{day}=")), None)
+        if day_record:
+            count = int(day_record.split("=")[1])
+            return count
+        else:
+            return 0
     async def reset_user_record(self, user_id: str,recordtime: str):
         '''重置用户记录（保留货币和道具）'''
         await self.database.update_user(user_id, {
@@ -159,31 +168,27 @@ class Deer:
         '''查看用户签到日历'''
         user_id = event.get_sender_id()
         user_name = event.get_sender_name()
-
+        target_user_id = await self.parse_target(event)
+        if target_user_id:
+            user_id = target_user_id
+            user_name = await daliya.get_name(event,target_user_id)
+        #时间模块
         current_date = datetime.datetime.now()
         year = current_date.year
         month = current_date.month
-
+        #
         record = await self.get_user_record(user_id)
         if not record:
             result = MessageChain()
             result.chain = [Plain("未找到该用户的签到记录。")]
             await event.send(result)
             return
-
+        #
         calendar_image = await pilcreate.render_sign_in_calendar(record, year, month, user_name)
         result = MessageChain()
         result.chain = [Image.fromFileSystem(calendar_image)]
         await event.send(result)
         '''-------------------------------------------------------------'''
-    async def get_sign_in_record(self, record: Dict, day: int):
-        '''检查签到次数是否达到上限'''
-        day_record = next((d for d in record["checkindate"] if d.startswith(f"{day}=")), None)
-        if day_record:
-            count = int(day_record.split("=")[1])
-            return count
-        else:
-            return 0
 
     async def update_sign_in_record(self, record: Dict, day: int):
         '''更新签到记录'''
@@ -232,7 +237,7 @@ class Deer:
             await self.reset_user_record(user_id,f"{year}-{month}")
             record = await self.get_user_record(user_id)
         #
-        times = await self.get_sign_in_record(record, day)
+        times = await self.get_sign_in_record(user_id, day)
         if times >= 3:
             result = MessageChain()
             result.chain = [Plain("今天已经鹿过3次了，给牛牛放个假，请明天再鹿吧~")]
@@ -240,12 +245,11 @@ class Deer:
             return
         #
         await self.update_sign_in_record(record, day)
-        record = await self.get_user_record(user_id)
-        times = await self.get_sign_in_record(record, day)
         reward = self.cost_table["checkin_reward"]["鹿"]["cost"]
         await self.modify_currency(user_id, reward)
-        currency = await self.get_currency(user_id)
         #
+        times = await self.get_sign_in_record(user_id, day)
+        currency = await self.get_currency(user_id)
         result = MessageChain()
         result.chain = [Plain(
             f"你今天已经鹿了 {times} 次啦~ 继续加油咪~\n本次签到获得 {self.cost_table['checkin_reward']['鹿']['cost']} 个 {self.currency}。\n当前您总共拥有 {currency} 个 {self.currency}")]
@@ -271,7 +275,7 @@ class Deer:
             await event.send(result)
             return
         #
-        times = await self.get_sign_in_record(record, day)
+        times = await self.get_sign_in_record(user_id, day)
         if times >= 3:
             result = MessageChain()
             result.chain = [Plain("指定日期已经鹿过3次了，不能再补鹿了！")]
@@ -308,7 +312,7 @@ class Deer:
             await event.send(result)
             return
 
-        times = await self.get_sign_in_record(record, day)
+        times = await self.get_sign_in_record(user_id, day)
         if times <= 0:
             result = MessageChain()
             result.chain = [Plain(f"你没有在{day}号签到。")]
@@ -332,7 +336,8 @@ class Deer:
             result.chain = [Plain("请指定要帮鹿管的用户【帮鹿@xx】")]
             await event.send(result)
             return
-        target_user_name = 'CESHI'
+        target_user_name = await daliya.get_name(event,target_user_id)
+        #
         current_date = datetime.datetime.now()
         year = current_date.year
         month = current_date.month
@@ -356,7 +361,7 @@ class Deer:
             await event.send(result)
             return
         #
-        times = await self.get_sign_in_record(record, day)
+        times = await self.get_sign_in_record(user_id, day)
         if times >= 3:
             result = MessageChain()
             result.chain = [Plain("TA今天已经鹿过3次了，给好兄弟的牛牛放个假，明天再帮TA鹿吧~")]
@@ -377,11 +382,12 @@ class Deer:
         await self.modify_currency(user_id, reward)
         currency = await self.get_currency(user_id)
         #
-        times = await self.get_sign_in_record(record, day)
+        times = await self.get_sign_in_record(user_id, day)
         result = MessageChain()
         result.chain = [Plain(
             f"你成功帮助 {target_user_name} 鹿管！他今天已经鹿了 {times} 次了！您获得 {self.cost_table['checkin_reward']['鹿@用户']['cost']} 个 {self.currency}。\n当前您总共拥有 {currency} 个 {self.currency}")]
         await event.send(result)
+        await self.view_calendar(event)
 
     async def is_help_sign_in_limit_reached(self, user_id: str, day: int) -> bool:
         record = await self.get_user_record(user_id)
@@ -446,21 +452,12 @@ class Deer:
         await event.send(result)
 
     async def use_item(self, event: AstrMessageEvent, item_name: str):
-        """
-        使用道具
-
-        参数:
-            item_name (str): 道具名称
-        """
         user_id = event.get_sender_id()
-
-        # 获取用户记录
+        user_name = event.get_sender_name()
+        #
         record = await self.get_user_record(user_id)
         if not record:
-            result = MessageChain()
-            result.chain = [Plain("未找到你的签到记录。")]
-            await event.send(result)
-            return
+            record = await self.create_user_record(user_id, user_name)
 
         # 检查用户是否拥有该道具
         if "itemInventory" not in record or item_name not in record["itemInventory"]:
@@ -475,20 +472,26 @@ class Deer:
             target_user_id = await self.parse_target(event)
             if not target_user_id:
                 result = MessageChain()
-                result.chain = [Plain("请指定要帮助的用户。")]
+                result.chain = [Plain("请指定要强制帮鹿管的用户【使用 钥匙@xx】")]
                 await event.send(result)
                 return
-
             # 调用帮助签到逻辑
-            await self.help_sign_in(event)
-
             # 移除道具
+            record2 = await self.get_user_record(target_user_id)
+            if not record2:
+                result = MessageChain()
+                result.chain = [Plain("用户未找到")]
+                await event.send(result)
+                return
+            record2["allowHelp"] = not record2["allowHelp"]
+            await self.database.update_user(target_user_id, record2)
+
             record["itemInventory"].remove(item_name)
             await self.database.update_user(user_id, record)
-
             result = MessageChain()
             result.chain = [Plain(f"你使用了【钥匙】强制帮 {target_user_id} 鹿管。")]
             await event.send(result)
+            await self.help_sign_in(event)
         else:
             result = MessageChain()
             result.chain = [Plain(f"道具 {item_name} 暂无使用效果。")]
@@ -497,7 +500,11 @@ class Deer:
     async def buy_item(self, event: AstrMessageEvent, item_name: str):
         """道具购买系统"""
         user_id = event.get_sender_id()
-        user = await self.database.get_user(user_id)
+        user_name = event.get_sender_name()
+        #
+        record = await self.get_user_record(user_id)
+        if not record:
+            record = await self.create_user_record(user_id, user_name)
 
         # 查找商品
         item_info = next(
@@ -510,16 +517,16 @@ class Deer:
             return
 
         cost = abs(item_info["cost"])
-        if user["value"] < cost:
+        if record["value"] < cost:
             await event.send(MessageChain([Plain(f"余额不足，需要 {cost} {self.currency}")]))
             return
 
         # 扣款并添加道具
         await self.modify_currency(user_id, -cost)
-        new_items = user["itemInventory"] + [item_name]
+        new_items = record["itemInventory"] + [item_name]
         await self.database.update_user(user_id, {"itemInventory": new_items})
 
         await event.send(MessageChain([
             Plain(f"成功购买 {item_name}！"),
-            Plain(f"当前余额：{user['value'] - cost} {self.currency}")
+            Plain(f"当前余额：{record['value'] - cost} {self.currency}")
         ]))

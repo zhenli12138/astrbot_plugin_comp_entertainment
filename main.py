@@ -5,6 +5,7 @@ import os
 import json
 import aiohttp
 import asyncio
+from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import AiocqhttpMessageEvent
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz, deer
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,text, search
@@ -20,28 +21,28 @@ class CompEntertainment(Star):
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
         self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
-        self.version = '194'
-        self.hashs = ''
-        self.config = config
-        self.opsss = False
-        self.flag2 = True
-        self.flag = False
         self.song_name = None
+        # 菜单配置
+        self.version = '195'
+        self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
             print(f"文件 {self.hashfile} 不存在，已创建并初始化。")
         else:
             print(f"文件 {self.hashfile} 已存在，跳过创建。")
         self.load()
-        #TTS配置
+        # TTS配置
         self.vitsrooms = []
+        self.opsss = False
+        self.flag2 = True
+        self.flag = False
         if not os.path.exists(self.file_path):
             self.save_rooms()
             print(f"文件 {self.file_path} 不存在，已创建并初始化。")
         else:
             print(f"文件 {self.file_path} 已存在，跳过创建。")
         self.load_rooms()
-        #ddz配置
+        # ddz配置
         self.rooms = {}  # {room_id: game}
         self.player_rooms = {}  # {player_id: room_id}
         if not os.path.exists(self.ddzpath):
@@ -50,6 +51,9 @@ class CompEntertainment(Star):
         else:
             print(f"文件 {self.ddzpath} 已存在，跳过创建。")
         self.load_game()
+
+    '''菜单功能部分'''
+
     @filter.command("菜单")
     async def menu(self, event: AstrMessageEvent):
         new_hashs = await api.get_hash()
@@ -426,6 +430,9 @@ class CompEntertainment(Star):
     async def handle_pass(self,event: AstrMessageEvent):
         self.rooms, self.player_rooms = await ddz.handle_pass(event,self.rooms, self.player_rooms)
         self.save_game()
+
+    '''TTS功能部分'''
+
     @filter.on_decorating_result(priority=100)
     async def voice(self, event: AstrMessageEvent):
         result = event.get_result()

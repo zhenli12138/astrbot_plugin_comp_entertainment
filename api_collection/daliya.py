@@ -5,6 +5,19 @@ from astrbot.api.message_components import Plain, Image, Record, At, Node, Nodes
 from astrbot.api.message_components import Node, Plain, Image
 from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import AiocqhttpMessageEvent
 
+
+async def get_name(event: AstrMessageEvent,ids:str):
+    if event.get_platform_name() == "aiocqhttp":
+        # qq
+        client = event.bot  # 得到 client
+        payloads = {
+            "user_id": ids,
+        }
+        ret = await client.api.call_action('get_stranger_info', **payloads)  # 调用 协议端  API
+        name = ret.get('nick')
+        return name
+
+
 async def easy_send(event: AstrMessageEvent,message: MessageChain):
     bot = event.bot
     ret = await AiocqhttpMessageEvent._parse_onebot_json(message)
