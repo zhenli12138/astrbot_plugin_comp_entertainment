@@ -11,7 +11,7 @@ from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,em
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music,chess, blue_archive
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
           "达莉娅群娱插件，50+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
-          "v1.9.0")
+          "v1.9.3")
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -20,7 +20,7 @@ class CompEntertainment(Star):
         self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
         self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
-        self.version = '192'
+        self.version = '193'
         self.hashs = ''
         self.config = config
         self.opsss = False
@@ -337,6 +337,13 @@ class CompEntertainment(Star):
 
     '''鹿管功能部分'''
 
+    @filter.command("钱包")
+    async def get_currency(self, event: AstrMessageEvent):
+        user_id = event.get_sender_id()
+        currency = await deer.Deer.get_currency(self.deerpipe,user_id)
+        result = MessageChain()
+        result.chain = [Plain(f"您的鹿币金额为：{currency}")]
+        await event.send(result)
     @filter.command("购买")
     async def buy(self, event: AstrMessageEvent, item_name: str):
         await deer.Deer.buy_item(self.deerpipe,event,item_name)
@@ -359,8 +366,8 @@ class CompEntertainment(Star):
     async def leaderboard(self, event: AstrMessageEvent):
         await deer.Deer.leaderboard(self.deerpipe, event)
     @filter.command("补鹿")
-    async def resign(self, event: AstrMessageEvent, day: int, target_user: Optional[str] = None):
-        await deer.Deer.resign(self.deerpipe,event, day, target_user)
+    async def resign(self, event: AstrMessageEvent, day: int):
+        await deer.Deer.resign(self.deerpipe,event, day)
     @filter.command("戒鹿")
     async def cancel_sign_in(self, event: AstrMessageEvent, day: Optional[int] = None):
         await deer.Deer.cancel_sign_in(self.deerpipe, event, day)

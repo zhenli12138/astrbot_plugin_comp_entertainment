@@ -13,8 +13,10 @@ class Poker:
 from PIL import Image, ImageDraw, ImageFont
 
 async def generate_menu():
-    # 背景图片路径
     background_image_path = './data/plugins/astrbot_plugin_comp_entertainment/background.jpg'
+    font = ImageFont.truetype('./data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf', 28)
+    shadow_font = ImageFont.truetype('./data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf', 28)
+    output_path = f"./data/plugins/astrbot_plugin_comp_entertainment/ddz.png"
     if background_image_path:
         img = Image.open(background_image_path).convert('RGBA')
         img = img.resize((800, 600))  # 调整底图大小
@@ -24,11 +26,6 @@ async def generate_menu():
     # 创建一个透明的图层用于绘制菜单
     overlay = Image.new('RGBA', img.size, (255, 255, 255, 0))
     d = ImageDraw.Draw(overlay)
-
-    # 使用更美观的字体
-    font = ImageFont.truetype('./data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf', 28)
-    shadow_font = ImageFont.truetype('./data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf', 28)
-
     # 菜单内容
     menu = [
         "/创建房间",
@@ -66,12 +63,13 @@ async def generate_menu():
     img = img.convert('RGB')  # 转换回RGB模式以便保存为PNG
 
     # 保存图片
-    output_path = f"./data/plugins/astrbot_plugin_comp_entertainment/ddz.png"
+
     img.save(output_path, format='PNG')
     return output_path
 
 async def generate_hand_image(cards,idx):
     font = './data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf'
+    output_path = f"./data/plugins/astrbot_plugin_comp_entertainment/pic{idx}.png"
     card_width = 80
     card_height = 120
     spacing = 50
@@ -108,7 +106,7 @@ async def generate_hand_image(cards,idx):
         bordered_img = ImageOps.expand(card_img, border=border_width, fill=border_color)
         img.paste(bordered_img, (i * spacing, 80))
 
-    output_path = f"./data/plugins/astrbot_plugin_comp_entertainment/pic{idx}.png"
+
     img.save(output_path, format='PNG')
     return output_path
 
@@ -241,6 +239,10 @@ async def render_sign_in_calendar(record: Dict, year: int, month: int, user_name
         month (int): 月份
         user_name (str): 用户名
     """
+    day_bg_path = "./data/plugins/astrbot_plugin_comp_entertainment/day.png"
+    check_mark_path = "./data/plugins/astrbot_plugin_comp_entertainment/check.png"
+    save_path = "./data/plugins/astrbot_plugin_comp_entertainment/calendar.png"
+    font = ImageFont.truetype("./data/plugins/astrbot_plugin_comp_entertainment/MiSans-Regular.ttf", 16)
     # 获取签到记录
     checkindate = record.get("checkindate", [])
     checkin_days = set()
@@ -263,12 +265,6 @@ async def render_sign_in_calendar(record: Dict, year: int, month: int, user_name
     image = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(image)
 
-    # 加载字体
-    try:
-        font = ImageFont.truetype("./data/plugins/astrbot_plugin_test/MiSans-Regular.ttf", 16)
-    except IOError:
-        font = ImageFont.load_default()
-
     # 绘制标题
     title = f"{year}-{month_name}  鹿了\n{user_name}"
     bbox = draw.textbbox((0, 0), title, font=font)  # 获取文本的边界框
@@ -282,10 +278,6 @@ async def render_sign_in_calendar(record: Dict, year: int, month: int, user_name
         x = padding + i * cell_size
         y = padding + title_height + 10
         draw.text((x, y), day, fill="black", font=font)
-
-    # 加载背景图片和签到标记图片
-    day_bg_path = "./data/plugins/astrbot_plugin_test/day.png"
-    check_mark_path = "./data/plugins/astrbot_plugin_test/check.png"
 
     if not os.path.exists(day_bg_path) or not os.path.exists(check_mark_path):
         raise FileNotFoundError("背景图片或签到标记图片未找到。")
@@ -311,7 +303,6 @@ async def render_sign_in_calendar(record: Dict, year: int, month: int, user_name
             if day in checkin_days:
                 image.paste(check_mark, (x, y), check_mark)
 
-    # 将图片保存为 Base64 编码
-    save_path = "./data/plugins/astrbot_plugin_test/calendar.png"  # 请替换为实际的保存路径和文件名
+
     image.save(save_path, format="PNG")
     return save_path
