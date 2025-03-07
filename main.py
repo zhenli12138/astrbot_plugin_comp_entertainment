@@ -649,7 +649,9 @@ class CompEntertainment(Star):
             response = ''
             for texts in text_contents:
                 response += await self.ask_question(event,texts)
+            logger.warning(f"llm加入: {response}")
             req.system_prompt += f"参考回复内容：{response}"
+
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def on_group_message(self, event: AstrMessageEvent):
         """处理群聊消息"""
