@@ -94,7 +94,7 @@ class ConfigManager:
 class Deer:
     def __init__(self):
         super().__init__()
-        self.config = ConfigManager("./data/plugins/astrbot_plugin_comp_entertainment/config.jsonl")  # 初始化配置管理器
+        self.config = ConfigManager("./data/plugins/config.jsonl")  # 初始化配置管理器
         # 初始化配置参数
         self.currency = self.config.get("currency", "鹿币")
         self.max_help_times = self.config.get("maximum_helpsignin_times_per_day", 5)
@@ -102,7 +102,7 @@ class Deer:
         self.reset_cycle = self.config.get("Reset_Cycle", "每月")
         self.cost_table = self.config.get("cost", {})
         # 初始化数据库和货币管理器
-        self.database = JsonlDatabase("./data/plugins/astrbot_plugin_comp_entertainment/deerpipe.jsonl")
+        self.database = JsonlDatabase("./data/plugins/deerpipe.jsonl")
     async def create_user_record(self, user_id: str, user_name: str) -> Dict:
         """获取或创建用户记录（包含货币字段）"""
         user = await self.database.get_user(user_id)

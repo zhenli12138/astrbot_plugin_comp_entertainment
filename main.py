@@ -29,12 +29,12 @@ class CompEntertainment(Star):
         self.last_message_time: Dict[str, Dict[str, float]] = {}  # {group_id: {user_id: timestamp}}
         self.deerpipe = deer.Deer()
         self.menu_path = "./data/plugins/astrbot_plugin_comp_entertainment/menu_output.png"
-        self.hashfile = "./data/plugins/astrbot_plugin_comp_entertainment/menu.json"
-        self.file_path = './data/plugins/astrbot_plugin_comp_entertainment/vitsrooms.jsonl'
-        self.ddzpath = './data/plugins/astrbot_plugin_comp_entertainment/data.jsonl'
+        self.hashfile = "./data/plugins/menu.json"
+        self.file_path = './data/plugins/vitsrooms.jsonl'
+        self.ddzpath = './data/plugins/data.jsonl'
         self.song_name = None
         # 菜单配置
-        self.version = '198'
+        self.version = '199'
         self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
@@ -632,10 +632,16 @@ class CompEntertainment(Star):
             if isinstance(comp, At) and event.get_self_id() == str(comp.qq):
                 return True
         return False
-
-    @filter.on_llm_request()
-    async def my_custom_hook_1(self, event: AstrMessageEvent, req: ProviderRequest):  # 请注意有三个参数
+    @filter.on_decorating_result(priority=101)
+    async def ai_make(self, event: AstrMessageEvent):
+        result = event.get_result()
         room = event.get_group_id()
+        if not result.chain:
+            logger.info(f"返回消息为空,pass")
+            return
+        if not result.is_llm_result():
+            logger.info(f"非LLM消息,pass")
+            return
         if room in self.vitsrooms:
             message_chain = []
             for component in event.message_obj.message:
@@ -646,11 +652,11 @@ class CompEntertainment(Star):
                     message_chain.append({"type": "image", "file": img_url})
 
             text_contents = [item["content"] for item in message_chain if item.get("type") == "text"]
-            response = ''
+            result = MessageChain()
+            result.chain = []
             for texts in text_contents:
-                response += await self.ask_question(event,texts)
-            logger.warning(f"llm加入: {response}")
-            req.system_prompt += f"参考回复内容：{response}"
+                result = await self.ask_question(event,texts)
+            await event.send(result)
 
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def on_group_message(self, event: AstrMessageEvent):
@@ -761,14 +767,13 @@ class CompEntertainment(Star):
         return merged
 
 
-    async def ask_question(self, event: AstrMessageEvent,question: str)->str:
+    async def ask_question(self, event: AstrMessageEvent,question: str):
         """发送询问请求"""
         ask_payload = {
             "message_chain": [{"type": "text", "content": question}]
         }
         result = MessageChain()
         result.chain = []
-        texts = ''
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -783,23 +788,22 @@ class CompEntertainment(Star):
                         for elem in reply.get("reply", []):
                             if elem["type"] == "text":
                                 result.chain.append(Plain(elem["content"]))
-                                texts += elem["content"]
                             elif elem["type"] == "image":
                                 result.chain.append(Image.fromURL(elem["url"]))
                             else:
                                 result.chain.append(Plain('不理你！'))
                         #await event.send(result)
-                        return texts
+                        return result
                     else:
                         error_info = await response.text()
-                        return f'请提醒用户程序出错：询问失败: {response.status} {error_info}'
+                        logger.warning(f'请提醒用户程序出错：询问失败: {response.status} {error_info}')
 
         except aiohttp.ClientConnectorError:
-            return '请提醒用户程序出错：api访问失败'
+            logger.warning('请提醒用户程序出错：api访问失败')
         except asyncio.TimeoutError:
-            return '请提醒用户程序出错：api访问失败'
+            logger.warning('请提醒用户程序出错：api访问失败')
         except Exception as e:
-            return f'请提醒用户程序出错：{str(e)}'
+            logger.warning(f'请提醒用户程序出错：{str(e)}')
 '''
     @llm_tool("Image_Recognition")
     async def trap1566(self, event: AstrMessageEvent, image_url: str) -> MessageEventResult:
