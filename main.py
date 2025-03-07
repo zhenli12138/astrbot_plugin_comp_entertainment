@@ -601,11 +601,11 @@ class CompEntertainment(Star):
         if room in self.vitsrooms:
             self.vitsrooms.remove(room)
             self.save_rooms()
-            yield event.chain_result(chain1)
+            yield event.chain_result(chain2)
         else:
             self.vitsrooms.append(room)
             self.save_rooms()
-            yield event.chain_result(chain2)
+            yield event.chain_result(chain1)
     @filter.command("开启收集")
     async def enable_collection(self, event: AstrMessageEvent):
         """启用当前群聊的消息收集"""
@@ -647,16 +647,21 @@ class CompEntertainment(Star):
             for component in event.message_obj.message:
                 if isinstance(component, Plain):
                     message_chain.append({"type": "text", "content": component.text.strip()})
+                '''
                 elif isinstance(component, Image):
                     img_url = component.url if component.url.startswith("http") else component.file
                     message_chain.append({"type": "image", "file": img_url})
-
+                '''
             text_contents = [item["content"] for item in message_chain if item.get("type") == "text"]
-            result = MessageChain()
-            result.chain = []
-            for texts in text_contents:
-                result = await self.ask_question(event,texts)
-            await event.send(result)
+            try:
+                for texts in text_contents:
+                    component_text = await self.ask_question(event,texts)
+                    result = event.make_result()
+                    result.message(component_text)
+                    event.set_result(result)
+            except Exception as e:
+                return
+
 
     @event_message_type(EventMessageType.GROUP_MESSAGE)
     async def on_group_message(self, event: AstrMessageEvent):
@@ -669,10 +674,11 @@ class CompEntertainment(Star):
         for component in event.message_obj.message:
             if isinstance(component, Plain):
                 message_chain.append({"type": "text", "content": component.text.strip()})
+            '''
             elif isinstance(component, Image):
                 img_url = component.url if component.url.startswith("http") else component.file
                 message_chain.append({"type": "image", "file": img_url})
-
+            '''
         # 在on_group_message中使用
         message_chain = self._merge_messages(message_chain)
 
@@ -785,15 +791,19 @@ class CompEntertainment(Star):
                         reply = await response.json()
                         logger.warning(f"回复消息: {reply}")
                         result.chain = []
+                        reg = ''
                         for elem in reply.get("reply", []):
                             if elem["type"] == "text":
                                 result.chain.append(Plain(elem["content"]))
+                                reg  += elem["content"]
                             elif elem["type"] == "image":
                                 result.chain.append(Image.fromURL(elem["url"]))
                             else:
                                 result.chain.append(Plain('不理你！'))
+                                reg += '空'
                         #await event.send(result)
-                        return result
+                        #return result
+                        return reg
                     else:
                         error_info = await response.text()
                         logger.warning(f'请提醒用户程序出错：询问失败: {response.status} {error_info}')
