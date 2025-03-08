@@ -12,26 +12,26 @@ from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video,
 from pathlib import Path
 from typing import Dict, List
 from astrbot.api.all import *
-ALLOWED_GROUPS_FILE = Path("./data/plugins/allowed_groups.jsonl")
 MESSAGE_BUFFER: Dict[str, List[dict]] = {}  # {group_id: [{"user_id": str, "messages": list}, ...]}
 BUFFER_LIMIT = 2  # 一问一答的对话对数量
 MERGE_TIMEOUT = 60  # 同一用户消息合并时间窗口（秒）
 
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
           "达莉娅群娱插件，60+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
-          "v2.0.2")
+          "v2.1.0")
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
         self.deerpipe = deer.Deer()
+        self.song_name = None
+        # 文件路径配置
+        self.ALLOWED_GROUPS_FILE = Path("./data/plugins/allowed_groups.jsonl")
         self.menu_path = "./data/plugins/menu_output.png"
         self.hashfile = "./data/plugins/menu.json"
         self.file_path = './data/plugins/vitsrooms.jsonl'
-        self.tts_path = './data/plugins/ttsrooms.jsonl'
         self.ddzpath = './data/plugins/data.jsonl'
-        self.song_name = None
         # 菜单配置
-        self.version = '202'
+        self.version = '210'
         self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
@@ -39,17 +39,6 @@ class CompEntertainment(Star):
         else:
             print(f"文件 {self.hashfile} 已存在，跳过创建。")
         self.load()
-        # TTS配置
-        self.model = '梅琳娜'
-        self.ttsrooms = []
-        self.flag2 = False
-        self.flag = False
-        if not os.path.exists(self.tts_path):
-            self.save_ttsrooms()
-            print(f"文件 {self.tts_path} 不存在，已创建并初始化。")
-        else:
-            print(f"文件 {self.tts_path} 已存在，跳过创建。")
-        self.load_ttsrooms()
         # ddz配置
         self.rooms = {}  # {room_id: game}
         self.player_rooms = {}  # {player_id: room_id}
@@ -568,110 +557,6 @@ class CompEntertainment(Star):
         # 处理消息队列
         await ai_make.process_group_buffer(group_id)
 
-    '''TTS功能部分'''
-    @filter.command("TTS")
-    async def tts_switch(self, event: AstrMessageEvent):
-        room = event.get_group_id()
-        chain1 = [Plain(f"本群TTS启动（仅限本群）"),Face(id=337)]
-        chain2 = [Plain(f"本群TTS关闭（仅限本群）"),Face(id=337)]
-        if room in self.ttsrooms:
-            self.ttsrooms.remove(room)
-            self.save_ttsrooms()
-            yield event.chain_result(chain2)
-        else:
-            self.ttsrooms.append(room)
-            self.save_ttsrooms()
-            yield event.chain_result(chain1)
-    @filter.on_decorating_result(priority=100)
-    async def voice(self, event: AstrMessageEvent):
-        result = event.get_result()
-        room = event.get_group_id()
-        texts = result.get_plain_text()
-        res = MessageChain()
-        res.chain = result.chain
-        adapter_name = event.get_platform_name()
-        if room in self.ttsrooms:
-            if adapter_name == "qq_official":
-                logger.info("检测为官方机器人，自动忽略转语音请求")
-                return
-            if not result.chain:
-                logger.info(f"返回消息为空,pass")
-                return
-            if not result.is_llm_result():
-                logger.info(f"非LLM消息,pass")
-                return
-            if self.flag:
-                await event.send(res)
-            logger.info(f"LLM返回的文本是：{texts}")
-            result.chain.remove(Plain(texts))
-            if self.flag2:
-                texts = await text.remove_complex_emoticons(texts)
-                logger.info(f"过滤颜表情后的文本是：{texts}")
-            text_chunks = [texts[i:i + 200] for i in range(0, len(texts), 200)]
-            for chunk in text_chunks:
-                det = await music.generate_voice(chunk,self.model)
-                voice = MessageChain()
-                voice.chain.append(Record.fromURL(det))
-                await event.send(voice)
-
-
-    @filter.command("切换音色")
-    async def timbre_switch(self, event: AstrMessageEvent, model:str):
-        # 允许切换的音色列表
-        allowed_models = [
-            "孙笑川", "东雪莲", "玛莲妮亚", "菈妮", "梅琳娜", "蒙葛特",
-            "银手", "女v", "米莉森", "帕奇", "赛尔维斯", "丁真",
-            "蔡徐坤", "科比", "富兰克林"
-        ]
-        # 验证 model 参数
-        if model not in allowed_models:
-            error_msg = f"请选择以下角色：{'、'.join(allowed_models)}"
-            yield event.chain_result([Plain(error_msg), Face(id=174)])  # 174 是困惑表情
-            return
-
-        # 更新 model 并切换状态
-        self.model = model
-        response = [Plain(f"【{model}】音色已成功切换"), Face(id=337)]  # 337 是笑脸
-        yield event.chain_result(response)
-
-    @filter.command("filter")
-    async def filter_switch(self, event: AstrMessageEvent):
-        chain1 = [Plain(f"过滤已经启动"),Face(id=337)]
-        chain2 = [Plain(f"过滤已经关闭"),Face(id=337)]
-        self.flag2 = not self.flag2
-        if self.flag2:
-            yield event.chain_result(chain1)
-        else:
-            yield event.chain_result(chain2)
-
-    @filter.command("text")
-    async def text_switch(self, event: AstrMessageEvent):
-        user_id = event.get_sender_id()
-        chain1 = [Plain(f"文本已经启动"),Face(id=337)]
-        chain2 = [Plain(f"文本已经关闭"),Face(id=337)]
-        self.flag = not self.flag
-        if self.flag:
-            yield event.chain_result(chain1)
-        else:
-            yield event.chain_result(chain2)
-
-    def load_ttsrooms(self):
-        dicts = []
-        with open(self.tts_path, 'r') as f:
-            for line in f:
-                dicts.append(json.loads(line.strip()))
-        # 分配到各自的字典
-        if not dicts:  # 如果 dicts 为空
-            logger.warning("加载的数据为空")
-            return
-        else:
-            self.ttsrooms = dicts[0]
-            return
-
-    def save_ttsrooms(self):
-        with open(self.tts_path, 'w') as f:
-            f.write(json.dumps(self.ttsrooms) + '\n')
-
     def load_rooms(self):
         dicts = []
         with open(self.file_path, 'r') as f:
@@ -719,10 +604,10 @@ class CompEntertainment(Star):
     def _load_allowed_groups(self) -> set:
         """从JSONL文件加载允许的群组列表"""
         allowed = set()
-        if not ALLOWED_GROUPS_FILE.exists():
+        if not self.ALLOWED_GROUPS_FILE.exists():
             return allowed
 
-        with open(ALLOWED_GROUPS_FILE, "r", encoding="utf-8") as f:
+        with open(self.ALLOWED_GROUPS_FILE, "r", encoding="utf-8") as f:
             for line in f:
                 try:
                     data = json.loads(line.strip())
@@ -734,13 +619,13 @@ class CompEntertainment(Star):
     def _save_group(self, group_id: str, enable: bool):
         """更新群组权限并保存到文件"""
         if enable:
-            with open(ALLOWED_GROUPS_FILE, "a", encoding="utf-8") as f:
+            with open(self.ALLOWED_GROUPS_FILE, "a", encoding="utf-8") as f:
                 f.write(json.dumps({"group_id": group_id}) + "\n")
             self.allowed_groups.add(group_id)
         else:
             lines = []
-            if ALLOWED_GROUPS_FILE.exists():
-                with open(ALLOWED_GROUPS_FILE, "r", encoding="utf-8") as f:
+            if self.ALLOWED_GROUPS_FILE.exists():
+                with open(self.ALLOWED_GROUPS_FILE, "r", encoding="utf-8") as f:
                     for line in f:
                         try:
                             data = json.loads(line.strip())
@@ -749,54 +634,6 @@ class CompEntertainment(Star):
                         except json.JSONDecodeError:
                             continue
 
-            with open(ALLOWED_GROUPS_FILE, "w", encoding="utf-8") as f:
+            with open(self.ALLOWED_GROUPS_FILE, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
             self.allowed_groups.discard(group_id)
-
-
-
-'''
-    @llm_tool("Image_Recognition")
-    async def trap1566(self, event: AstrMessageEvent, image_url: str) -> MessageEventResult:
-        ''''''根据用户提供的图片URL进行图片识别，返回动漫相关信息。用户需要图片识别，提到有关图片识别时调用此工具。
-        Args:
-            image_url (string): 用户提供的图片URL，可以模糊判断
-        ''''''
-        data = self.image_recognition(image_url)
-        result = event.make_result()
-        result.chain = []
-        if data and data.get("code") == 200:
-            result.chain.append(Plain(f"中文标题: {data['data'].get('chinesetitle', 'N/A')}\n"))
-            result.chain.append(Plain(f"原生标题: {data['data'].get('nativetitle', 'N/A')}\n"))
-            result.chain.append(Plain(f"罗马音标题: {data['data'].get('romajititle', 'N/A')}\n"))
-            result.chain.append(Plain(f"相似度: {data['data'].get('similarity', 'N/A')}\n"))
-            result.chain.append(Image.fromURL(data['data'].get('img', 'N/A')))
-            result.chain.append(Plain(f"视频链接: {data['data'].get('video', 'N/A')}\n"))
-        else:
-            result.chain.append(Plain("图片识别失败，请检查图片URL或稍后再试。"))
-        return event.set_result(result)
-
-    def image_recognition(self, image_url):
-        # API地址
-        url = "https://api.52vmy.cn/api/img/fan"
-
-        # 请求参数
-        params = {
-            "url": image_url
-        }
-
-        try:
-            # 发送GET请求
-            response = requests.get(url, params=params)
-            response.raise_for_status()  # 检查请求是否成功
-            data = response.json()  # 解析返回的JSON数据
-
-            if data.get("code") == 200:
-                return data
-            else:
-                print(f"图片识别失败: {data.get('msg', '未知错误')}")
-                return None
-        except requests.exceptions.RequestException as e:
-            print(f"请求异常: {e}")
-            return None
-'''
