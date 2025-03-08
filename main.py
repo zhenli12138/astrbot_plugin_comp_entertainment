@@ -153,7 +153,7 @@ class CompEntertainment(Star):
     async def trap12(self, event: AstrMessageEvent):
         result,det= await music.get_music()
         voice = MessageChain()
-        voice.chain.append(Record(file=det))
+        voice.chain.append(Record.fromURL(det))
         await event.send(voice)
         await event.send(result)
     @filter.command("随机原神")
@@ -208,7 +208,7 @@ class CompEntertainment(Star):
     async def trap24(self, event: AstrMessageEvent,n: int):
         result,det = await music.search_music(self.song_name, n)
         voice = MessageChain()
-        voice.chain.append(Record(file=det))
+        voice.chain.append(Record.fromURL(det))
         await event.send(voice)
         await event.send(result)
     @filter.command("五子棋")
@@ -253,7 +253,7 @@ class CompEntertainment(Star):
     async def trap33(self, event: AstrMessageEvent,urls: str):
         result,det= await music.wyy_music_info(urls)
         voice = MessageChain()
-        voice.chain.append(Record(file=det))
+        voice.chain.append(Record.fromURL(det))
         await event.send(voice)
         await event.send(result)
     '''表情包制作功能部分'''
@@ -590,8 +590,11 @@ class CompEntertainment(Star):
             logger.info(f"过滤颜表情后的文本是：{texts}")
         text_chunks = [texts[i:i + 200] for i in range(0, len(texts), 200)]
         for chunk in text_chunks:
-            result = await music.generate_voice(chunk,self.model)
-            await event.send(result)
+            det = await music.generate_voice(chunk,self.model)
+            voice = MessageChain()
+            voice.chain.append(Record.fromURL(det))
+            await event.send(voice)
+
 
     @filter.command("切换音色")
     async def filter_switch(self, event: AstrMessageEvent, model):

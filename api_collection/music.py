@@ -34,9 +34,8 @@ async def search_music(song_name: str, n: Optional[int] = None):
                             result.chain.append(Plain(f"音质: {data.get('id', 'N/A')}\n"))
                             result.chain.append(Image.fromURL(data.get('cover', 'N/A')))
                             #result.chain.append(Plain(f"歌词: {data.get('lrc', 'N/A')}\n"))
-                            urls1 = data.get('music_url', 'N/A')
-                            det = await generate_music(urls1)
-                            return result, det
+                            urls = data.get('music_url', 'N/A')
+                            return result, urls
                         else:
                             # 返回歌曲列表
                             result.chain.append(Plain(f"找到以下歌曲:\n"))
@@ -74,10 +73,8 @@ async def get_music():
                     result.chain.append(Plain(f"ID: {data['data'].get('id', 'N/A')}\n"))
                     result.chain.append(Plain(f"Content: {data['data'].get('Content', 'N/A')}\n"))
                     result.chain.append(Plain(f"Nick: {data['data'].get('Nick', 'N/A')}\n"))
-                    urls2 = data['data'].get('Url', 'N/A')
-                    print(urls2)
-                    det = await generate_music(urls2)
-                    return result, det
+                    urls = data['data'].get('Url', 'N/A')
+                    return result, urls
                 else:
                     result.chain.append(Plain(f"请求失败，状态码: {response.status}"))
                     return result, det
@@ -145,8 +142,7 @@ async def wyy_music_info(url=None, ids=None, level='standard'):
                     result.chain.append(Image.fromURL(data.get('pic', 'N/A')))
                     # result.chain.append(Plain(f"歌词: {data.get('lrc', 'N/A')}\n"))
                     urls = data.get('url', 'N/A')
-                    det = await generate_music(urls)
-                    return result, det
+                    return result, urls
     except aiohttp.ClientError as e:
         result.chain.append(Plain(f"请求异常: {e}"))
         return result
@@ -173,15 +169,12 @@ async def generate_voice(text: str, model: str):
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload) as response:
                 if response.status == 200:
-                    result = await response.json(content_type=None)
-                    if result.get("code") == 200:
-                        print(result)
+                    data = await response.json(content_type=None)
+                    if data.get("code") == 200:
                         # 根据返回类型处理结果
                         if payload["type"] == "url":
-                            output_audio_path = result.get('url')
-                            det = await generate_music(output_audio_path)
-                            result.chain.append(Record(file=det))
-                            return result
+                            output_audio_path = data.get('url')
+                            return output_audio_path
                         else:
                             result.chain.append(Plain(f"语音生成失败: {result}"))
                             return result
