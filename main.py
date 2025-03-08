@@ -25,7 +25,7 @@ MERGE_TIMEOUT = 60  # 同一用户消息合并时间窗口（秒）
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
-        self.not_allowed_groups = self._load_allowed_groups()
+        self.allowed_groups = self._load_allowed_groups()
         self.last_message_time: Dict[str, Dict[str, float]] = {}  # {group_id: {user_id: timestamp}}
         self.deerpipe = deer.Deer()
         self.menu_path = "./data/plugins/astrbot_plugin_comp_entertainment/menu_output.png"
@@ -577,7 +577,7 @@ class CompEntertainment(Star):
         if enable:
             with open(ALLOWED_GROUPS_FILE, "a", encoding="utf-8") as f:
                 f.write(json.dumps({"group_id": group_id}) + "\n")
-            self.not_allowed_groups.add(group_id)
+            self.allowed_groups.add(group_id)
         else:
             lines = []
             if ALLOWED_GROUPS_FILE.exists():
@@ -592,7 +592,7 @@ class CompEntertainment(Star):
 
             with open(ALLOWED_GROUPS_FILE, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
-            self.not_allowed_groups.discard(group_id)
+            self.allowed_groups.discard(group_id)
     @filter.command("人工智障")
     async def switch(self, event: AstrMessageEvent):
         room  = event.get_group_id()
@@ -613,7 +613,7 @@ class CompEntertainment(Star):
             logger.warning("请在群聊中使用此命令")
             return
 
-        self._save_group(event.message_obj.group_id, False)
+        self._save_group(event.message_obj.group_id, True)
         logger.warning("已开启本群消息收集")
 
     @filter.command("关闭收集")
@@ -623,7 +623,7 @@ class CompEntertainment(Star):
             yield event.plain_result("请在群聊中使用此命令")
             return
 
-        self._save_group(event.message_obj.group_id, True)
+        self._save_group(event.message_obj.group_id, False)
         yield event.plain_result("已关闭本群消息收集")
 
     async def parse_target(self,event):
@@ -667,7 +667,7 @@ class CompEntertainment(Star):
     async def on_group_message(self, event: AstrMessageEvent):
         """处理群聊消息"""
         group_id = event.message_obj.group_id
-        if group_id in self.not_allowed_groups or group_id == '945041621':
+        if group_id not in self.allowed_groups or group_id == '945041621':
             return
 
         message_chain = []
