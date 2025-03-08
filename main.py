@@ -3,18 +3,16 @@ from astrbot.api.all import *
 from typing import (Dict, Any, Optional, AnyStr, Callable, Union, Awaitable,Coroutine)
 import os
 import json
-import aiohttp
-import asyncio
 from astrbot.api.provider import ProviderRequest
 from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import AiocqhttpMessageEvent
-from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz, deer
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz, deer, ai_make
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,text, search
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music,chess, blue_archive
 from pathlib import Path
 from typing import Dict, List
 from astrbot.api.all import *
-ALLOWED_GROUPS_FILE = Path("./data/plugins/astrbot_plugin_comp_entertainment/allowed_groups.jsonl")
+ALLOWED_GROUPS_FILE = Path("./data/plugins/allowed_groups.jsonl")
 MESSAGE_BUFFER: Dict[str, List[dict]] = {}  # {group_id: [{"user_id": str, "messages": list}, ...]}
 BUFFER_LIMIT = 2  # 一问一答的对话对数量
 MERGE_TIMEOUT = 60  # 同一用户消息合并时间窗口（秒）
@@ -25,10 +23,8 @@ MERGE_TIMEOUT = 60  # 同一用户消息合并时间窗口（秒）
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
-        self.allowed_groups = self._load_allowed_groups()
-        self.last_message_time: Dict[str, Dict[str, float]] = {}  # {group_id: {user_id: timestamp}}
         self.deerpipe = deer.Deer()
-        self.menu_path = "./data/plugins/astrbot_plugin_comp_entertainment/menu_output.png"
+        self.menu_path = "./data/plugins/menu_output.png"
         self.hashfile = "./data/plugins/menu.json"
         self.file_path = './data/plugins/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/data.jsonl'
@@ -43,7 +39,7 @@ class CompEntertainment(Star):
             print(f"文件 {self.hashfile} 已存在，跳过创建。")
         self.load()
         # TTS配置
-        self.vitsrooms = []
+        self.model = '梅琳娜'
         self.opsss = False
         self.flag2 = True
         self.flag = False
@@ -62,7 +58,10 @@ class CompEntertainment(Star):
         else:
             print(f"文件 {self.ddzpath} 已存在，跳过创建。")
         self.load_game()
-
+        # 人工智障配置
+        self.vitsrooms = []
+        self.allowed_groups = self._load_allowed_groups()
+        self.last_message_time: Dict[str, Dict[str, float]] = {}  # {group_id: {user_id: timestamp}}
     '''菜单功能部分'''
 
     @filter.command("菜单")
@@ -250,7 +249,13 @@ class CompEntertainment(Star):
         ba = blue_archive.Baarchive()
         result = await ba.handle_blue_archive(a)
         await event.send(result)
-
+    @filter.command("网易云音乐解析")
+    async def trap33(self, event: AstrMessageEvent,urls: str):
+        result,det= await music.wyy_music_info(urls)
+        voice = MessageChain()
+        voice.chain.append(Record(file=det))
+        await event.send(voice)
+        await event.send(result)
     '''表情包制作功能部分'''
 
     @filter.command("随机制作")
@@ -442,13 +447,126 @@ class CompEntertainment(Star):
         self.rooms, self.player_rooms = await ddz.handle_pass(event,self.rooms, self.player_rooms)
         self.save_game()
 
+    '''人工智障功能部分'''
+
+    @filter.command("人工智障")
+    async def switch(self, event: AstrMessageEvent):
+        room = event.get_group_id()
+        chain1 = [Plain(f"本群插件已经启动（仅本群）"), Face(id=337)]
+        chain2 = [Plain(f"本群插件已经关闭（仅本群）"), Face(id=337)]
+        if room in self.vitsrooms:
+            self.vitsrooms.remove(room)
+            self.save_rooms()
+            yield event.chain_result(chain2)
+        else:
+            self.vitsrooms.append(room)
+            self.save_rooms()
+            yield event.chain_result(chain1)
+
+    @filter.command("开启收集")
+    async def enable_collection(self, event: AstrMessageEvent):
+        """启用当前群聊的消息收集"""
+        if not event.message_obj.group_id:
+            logger.warning("请在群聊中使用此命令")
+            return
+
+        self._save_group(event.message_obj.group_id, True)
+        logger.warning("已开启本群消息收集")
+
+    @filter.command("关闭收集")
+    async def disable_collection(self, event: AstrMessageEvent):
+        """禁用当前群聊的消息收集"""
+        if not event.message_obj.group_id:
+            yield event.plain_result("请在群聊中使用此命令")
+            return
+
+        self._save_group(event.message_obj.group_id, False)
+        yield event.plain_result("已关闭本群消息收集")
+
+    @filter.on_decorating_result(priority=101)
+    async def ai_make(self, event: AstrMessageEvent):
+        result = event.get_result()
+        room = event.get_group_id()
+        if not result.chain:
+            logger.info(f"返回消息为空,pass")
+            return
+        if not result.is_llm_result():
+            logger.info(f"非LLM消息,pass")
+            return
+        if room in self.vitsrooms:
+            message_chain = []
+            for component in event.message_obj.message:
+                if isinstance(component, Plain):
+                    message_chain.append({"type": "text", "content": component.text.strip()})
+                '''
+                elif isinstance(component, Image):
+                    img_url = component.url if component.url.startswith("http") else component.file
+                    message_chain.append({"type": "image", "file": img_url})
+                '''
+            text_contents = [item["content"] for item in message_chain if item.get("type") == "text"]
+            try:
+                for texts in text_contents:
+                    component_text = await ai_make.ask_question(event, texts)
+                    result = event.make_result()
+                    result.message(component_text)
+                    event.set_result(result)
+            except Exception as e:
+                return
+
+    @event_message_type(EventMessageType.GROUP_MESSAGE)
+    async def on_group_message(self, event: AstrMessageEvent):
+        """处理群聊消息"""
+        group_id = event.message_obj.group_id
+        if group_id not in self.allowed_groups or group_id == '945041621':
+            return
+
+        message_chain = []
+        for component in event.message_obj.message:
+            if isinstance(component, Plain):
+                message_chain.append({"type": "text", "content": component.text.strip()})
+            '''
+            elif isinstance(component, Image):
+                img_url = component.url if component.url.startswith("http") else component.file
+                message_chain.append({"type": "image", "file": img_url})
+            '''
+        # 在on_group_message中使用
+        message_chain = await ai_make.merge_messages(message_chain)
+
+        user_id = event.get_sender_id()
+        timestamp = event.message_obj.timestamp
+
+        # 初始化数据结构
+        if group_id not in MESSAGE_BUFFER:
+            MESSAGE_BUFFER[group_id] = []
+        if group_id not in self.last_message_time:
+            self.last_message_time[group_id] = {}
+
+        # 合并同一用户连续消息
+        last_time = self.last_message_time[group_id].get(user_id, 0)
+        if timestamp - last_time < MERGE_TIMEOUT and MESSAGE_BUFFER[group_id]:
+            last_entry = MESSAGE_BUFFER[group_id][-1]
+            if last_entry["user_id"] == user_id:
+                last_entry["messages"].extend(message_chain)
+                self.last_message_time[group_id][user_id] = timestamp
+                return
+
+        # 添加新消息条目
+        MESSAGE_BUFFER[group_id].append({
+            "user_id": user_id,
+            "messages": message_chain,
+            "timestamp": timestamp
+        })
+        self.last_message_time[group_id][user_id] = timestamp
+
+        # 处理消息队列
+        await ai_make.process_group_buffer(group_id)
+
     '''TTS功能部分'''
 
     @filter.on_decorating_result(priority=100)
     async def voice(self, event: AstrMessageEvent):
         result = event.get_result()
         texts = result.get_plain_text()
-        room = event.get_group_id()
         res = MessageChain()
         res.chain = result.chain
         adapter_name = event.get_platform_name()
@@ -463,11 +581,6 @@ class CompEntertainment(Star):
         if not result.is_llm_result():
             logger.info(f"非LLM消息,pass")
             return
-        '''
-        if room in self.vitsrooms :
-            logger.info(f"本群插件已关闭")
-            return
-        '''
         if self.flag:
             await event.send(res)
         logger.info(f"LLM返回的文本是：{texts}")
@@ -480,6 +593,31 @@ class CompEntertainment(Star):
             result = await music.generate_voice(chunk,"梅琳娜")
             await event.send(result)
 
+    @filter.command("切换音色")
+    async def filter_switch(self, event: AstrMessageEvent, model):
+        # 允许切换的音色列表
+        allowed_models = [
+            "孙笑川", "东雪莲", "玛莲妮亚", "菈妮", "梅琳娜", "蒙葛特",
+            "银手", "女v", "米莉森", "帕奇", "赛尔维斯", "丁真",
+            "蔡徐坤", "科比", "富兰克林"
+        ]
+        # 验证 model 参数
+        if model not in allowed_models:
+            error_msg = f"请选择以下角色：{'、'.join(allowed_models)}"
+            yield event.chain_result([Plain(error_msg), Face(id=174)])  # 174 是困惑表情
+            return
+
+        # 更新 model 并切换状态
+        self.model = model
+        self.flag2 = not self.flag2
+
+        # 构建响应消息
+        if self.flag2:
+            response = [Plain(f"【{model}】音色过滤已启动"), Face(id=337)]  # 337 是笑脸
+        else:
+            response = [Plain(f"【{model}】音色过滤已关闭"), Face(id=333)]  # 333 是无奈脸
+
+        yield event.chain_result(response)
 
     @filter.command("filter")
     async def filter_switch(self, event: AstrMessageEvent):
@@ -593,227 +731,9 @@ class CompEntertainment(Star):
             with open(ALLOWED_GROUPS_FILE, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
             self.allowed_groups.discard(group_id)
-    @filter.command("人工智障")
-    async def switch(self, event: AstrMessageEvent):
-        room  = event.get_group_id()
-        chain1 = [Plain(f"本群插件已经启动（仅本群）"),Face(id=337)]
-        chain2 = [Plain(f"本群插件已经关闭（仅本群）"),Face(id=337)]
-        if room in self.vitsrooms:
-            self.vitsrooms.remove(room)
-            self.save_rooms()
-            yield event.chain_result(chain2)
-        else:
-            self.vitsrooms.append(room)
-            self.save_rooms()
-            yield event.chain_result(chain1)
-    @filter.command("开启收集")
-    async def enable_collection(self, event: AstrMessageEvent):
-        """启用当前群聊的消息收集"""
-        if not event.message_obj.group_id:
-            logger.warning("请在群聊中使用此命令")
-            return
-
-        self._save_group(event.message_obj.group_id, True)
-        logger.warning("已开启本群消息收集")
-
-    @filter.command("关闭收集")
-    async def disable_collection(self, event: AstrMessageEvent):
-        """禁用当前群聊的消息收集"""
-        if not event.message_obj.group_id:
-            yield event.plain_result("请在群聊中使用此命令")
-            return
-
-        self._save_group(event.message_obj.group_id, False)
-        yield event.plain_result("已关闭本群消息收集")
-
-    async def parse_target(self,event):
-        """解析@目标或用户名"""
-        for comp in event.message_obj.message:
-            if isinstance(comp, At) and event.get_self_id() == str(comp.qq):
-                return True
-        return False
-    @filter.on_decorating_result(priority=101)
-    async def ai_make(self, event: AstrMessageEvent):
-        result = event.get_result()
-        room = event.get_group_id()
-        if not result.chain:
-            logger.info(f"返回消息为空,pass")
-            return
-        if not result.is_llm_result():
-            logger.info(f"非LLM消息,pass")
-            return
-        if room in self.vitsrooms:
-            message_chain = []
-            for component in event.message_obj.message:
-                if isinstance(component, Plain):
-                    message_chain.append({"type": "text", "content": component.text.strip()})
-                '''
-                elif isinstance(component, Image):
-                    img_url = component.url if component.url.startswith("http") else component.file
-                    message_chain.append({"type": "image", "file": img_url})
-                '''
-            text_contents = [item["content"] for item in message_chain if item.get("type") == "text"]
-            try:
-                for texts in text_contents:
-                    component_text = await self.ask_question(event,texts)
-                    result = event.make_result()
-                    result.message(component_text)
-                    event.set_result(result)
-            except Exception as e:
-                return
 
 
-    @event_message_type(EventMessageType.GROUP_MESSAGE)
-    async def on_group_message(self, event: AstrMessageEvent):
-        """处理群聊消息"""
-        group_id = event.message_obj.group_id
-        if group_id not in self.allowed_groups or group_id == '945041621':
-            return
 
-        message_chain = []
-        for component in event.message_obj.message:
-            if isinstance(component, Plain):
-                message_chain.append({"type": "text", "content": component.text.strip()})
-            '''
-            elif isinstance(component, Image):
-                img_url = component.url if component.url.startswith("http") else component.file
-                message_chain.append({"type": "image", "file": img_url})
-            '''
-        # 在on_group_message中使用
-        message_chain = self._merge_messages(message_chain)
-
-        user_id = event.get_sender_id()
-        timestamp = event.message_obj.timestamp
-
-        # 初始化数据结构
-        if group_id not in MESSAGE_BUFFER:
-            MESSAGE_BUFFER[group_id] = []
-        if group_id not in self.last_message_time:
-            self.last_message_time[group_id] = {}
-
-        # 合并同一用户连续消息
-        last_time = self.last_message_time[group_id].get(user_id, 0)
-        if timestamp - last_time < MERGE_TIMEOUT and MESSAGE_BUFFER[group_id]:
-            last_entry = MESSAGE_BUFFER[group_id][-1]
-            if last_entry["user_id"] == user_id:
-                last_entry["messages"].extend(message_chain)
-                self.last_message_time[group_id][user_id] = timestamp
-                return
-
-        # 添加新消息条目
-        MESSAGE_BUFFER[group_id].append({
-            "user_id": user_id,
-            "messages": message_chain,
-            "timestamp": timestamp
-        })
-        self.last_message_time[group_id][user_id] = timestamp
-
-        # 处理消息队列
-        await self._process_group_buffer(group_id)
-
-    async def _process_group_buffer(self, group_id: str):
-        """处理指定群组的消息缓冲区"""
-        buffer = MESSAGE_BUFFER.get(group_id, [])
-        send_queue = []
-
-        # 收集有效对话对
-        i = 0
-        while i < len(buffer) - 1:
-            current = buffer[i]
-            next_msg = buffer[i + 1]
-
-            # 确保是不同用户且时间顺序正确
-            if current["user_id"] != next_msg["user_id"]:
-                send_queue.append((current["messages"], next_msg["messages"]))
-                i += 2
-            else:
-                i += 1
-
-        # 发送收集到的对话对
-        if send_queue:
-            for pair in send_queue:
-                await self._send_train_request(pair)
-
-            # 更新缓冲区（移除已发送的消息）
-            MESSAGE_BUFFER[group_id] = buffer[i:]
-
-    async def _send_train_request(self, message_pairs: tuple):
-        """发送训练请求到后端"""
-        train_payload = {
-            "messages_list": list(message_pairs)
-        }
-        print(f"上传消息:{train_payload}")
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                        "http://116.62.188.107:7000/train",
-                        json=train_payload,
-                        timeout=aiohttp.ClientTimeout(total=30)
-                ) as response:
-                    if response.status != 200:
-                        logger.error(f"训练失败: {response.status}")
-                        if response.status != 200:
-                            logger.error(f"训练失败: {response.status} {await response.text()}")
-        except aiohttp.ClientConnectorError:
-            logger.error("无法连接到训练服务器")
-        except asyncio.TimeoutError:
-            logger.error("训练请求超时")
-        except json.JSONDecodeError:
-            logger.error("响应解析失败")
-
-    def _merge_messages(self, messages: List[dict]) -> List[dict]:
-        merged = []
-        last_type = None
-        for msg in messages:
-            if msg["type"] == last_type == "text":
-                merged[-1]["content"] += f"，{msg['content']}"
-            else:
-                merged.append(msg)
-                last_type = msg["type"]
-        return merged
-
-
-    async def ask_question(self, event: AstrMessageEvent,question: str):
-        """发送询问请求"""
-        ask_payload = {
-            "message_chain": [{"type": "text", "content": question}]
-        }
-        result = MessageChain()
-        result.chain = []
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                        "http://116.62.188.107:7000/ask",
-                        json=ask_payload,
-                        timeout=aiohttp.ClientTimeout(total=10)
-                ) as response:
-                    if response.status == 200:
-                        reply = await response.json()
-                        logger.warning(f"回复消息: {reply}")
-                        result.chain = []
-                        reg = ''
-                        for elem in reply.get("reply", []):
-                            if elem["type"] == "text":
-                                result.chain.append(Plain(elem["content"]))
-                                reg  += elem["content"]
-                            elif elem["type"] == "image":
-                                result.chain.append(Image.fromURL(elem["url"]))
-                            else:
-                                result.chain.append(Plain('不理你！'))
-                                reg += '空'
-                        #await event.send(result)
-                        #return result
-                        return reg
-                    else:
-                        error_info = await response.text()
-                        logger.warning(f'请提醒用户程序出错：询问失败: {response.status} {error_info}')
-
-        except aiohttp.ClientConnectorError:
-            logger.warning('请提醒用户程序出错：api访问失败')
-        except asyncio.TimeoutError:
-            logger.warning('请提醒用户程序出错：api访问失败')
-        except Exception as e:
-            logger.warning(f'请提醒用户程序出错：{str(e)}')
 '''
     @llm_tool("Image_Recognition")
     async def trap1566(self, event: AstrMessageEvent, image_url: str) -> MessageEventResult:

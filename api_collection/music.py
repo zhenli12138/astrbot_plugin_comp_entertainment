@@ -102,18 +102,61 @@ async def generate_music(url):
                 print(f"下载失败，状态码: {response.status_code}")
     except httpx.RequestError as e:
         print(f"请求异常: {e}")
+async def wyy_music_info(url=None, ids=None, level='standard'):
+    """
+    调用网易云音乐API获取歌曲信息
+    :param url: 音乐分享链接
+    :param ids: 网易云音乐ID
+    :param level: 音质等级 (standard/exhigh/lossless/hires/jyeffect/sky/jymaster)
+    """
+    api_url = 'https://api.kxzjoker.cn/api/163_music'
+    # 参数验证
+    if url and ids:
+        raise ValueError("不能同时提供url和ids参数")
+    if not url and not ids:
+        raise ValueError("必须提供url或ids参数")
+    resp_type = 'json'
+
+    params = {
+        'level': level,
+        'type': resp_type
+    }
+    if url:
+        params['url'] = url
+    else:
+        params['ids'] = ids
+    result = MessageChain()
+    result.chain = []
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api_url, params=params) as response:
+                response.raise_for_status()  # 检查HTTP状态码
+                # 根据响应类型处理结果
+                if resp_type == 'json':
+                    data = await response.json()
+                    result.chain.append(Plain(f"专辑: {data.get('al_name', 'N/A')}\n"))
+                    result.chain.append(Plain(f"歌手: {data.get('ar_name', 'N/A')}\n"))
+                    result.chain.append(Plain(f"音质: {data.get('level', 'N/A')}\n"))
+                    result.chain.append(Image.fromURL(data.get('pic', 'N/A')))
+                    # result.chain.append(Plain(f"歌词: {data.get('lrc', 'N/A')}\n"))
+                    urls = data.get('url', 'N/A')
+                    det = await generate_music(urls)
+                    return result, det
+    except aiohttp.ClientError as e:
+        result.chain.append(Plain(f"请求异常: {e}"))
+        return result
+    except Exception as e:
+        result.chain.append(Plain(f"请求异常: {e}"))
+        return result
+
+
 async def generate_voice(text: str, model: str):
-    '''根据用户提供的文本生成语音，用户需要生成语音，提到有关语音合成时调用此工具
-    Args:
-        text (string): 用户提供的文本内容，支持中英日三语，超过200字符会自动切割。
-        model (string): 语音模型，支持8个：菈妮，玛莲妮亚，梅琳娜，帕奇，米莉森，蒙葛特，女v，银手。默认值为"菈妮"。
-    '''
     # API地址
     url = "http://uapi.dxx.gd.cn/voice/add"
     speed_factor = 1.0 #语速，取值范围0.5-1.5，默认值为1.0。
     types = "url" #音频返回形式，仅支持url和base64，默认值为"url"。
     # 请求参数
-    params = {
+    payload = {
         "text": text,
         "model": model,
         "speed_factor": speed_factor,
@@ -122,23 +165,28 @@ async def generate_voice(text: str, model: str):
     result = MessageChain()
     result.chain = []
     try:
-        # 使用 aiohttp 发送异步 POST 请求
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=params) as response:
-                # 检查请求是否成功
+            async with session.post(url, json=payload) as response:
                 if response.status == 200:
-                    data = await response.json()  # 解析返回的JSON数据
-                    if data.get("code") == 200:
-                        if types == "url":
-                            output_audio_path = data.get('url', 'N/A')
+                    result = await response.json(content_type=None)
+                    if result.get("code") == 200:
+                        print(result)
+                        # 根据返回类型处理结果
+                        if payload["type"] == "url":
+                            output_audio_path = result.get('url')
                             result.chain.append(Record(file=output_audio_path))
-                        return result
+                            return result
+                        else:
+                            result.chain.append(Plain(f"语音生成失败: {result}"))
+                            return result
                     else:
-                        result.chain.append(Plain(f"语音生成失败: {data.get('msg', '未知错误')}"))
+                        result.chain.append(Plain(f"语音生成失败: {result}"))
                         return result
                 else:
-                    result.chain.append(Plain(f"请求失败，状态码: {response.status}"))
-                    return result
+                    print(f"HTTP Error: {response.status}")
     except aiohttp.ClientError as e:
-        result.chain.append(Plain(f"请求异常: {e}"))
-        return result
+        print(f"Request failed: {str(e)}")
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+
+
