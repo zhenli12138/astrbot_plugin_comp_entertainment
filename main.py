@@ -19,7 +19,7 @@ MERGE_TIMEOUT = 60  # 同一用户消息合并时间窗口（秒）
 
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
           "达莉娅群娱插件，60+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
-          "v2.0.1")
+          "v2.0.2")
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -31,7 +31,7 @@ class CompEntertainment(Star):
         self.ddzpath = './data/plugins/data.jsonl'
         self.song_name = None
         # 菜单配置
-        self.version = '201'
+        self.version = '202'
         self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
@@ -590,7 +590,7 @@ class CompEntertainment(Star):
         res = MessageChain()
         res.chain = result.chain
         adapter_name = event.get_platform_name()
-        if room in self.vitsrooms:
+        if room in self.ttsrooms:
             if adapter_name == "qq_official":
                 logger.info("检测为官方机器人，自动忽略转语音请求")
                 return
