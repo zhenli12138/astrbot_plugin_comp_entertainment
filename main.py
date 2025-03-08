@@ -19,7 +19,7 @@ MERGE_TIMEOUT = 60  # 同一用户消息合并时间窗口（秒）
 
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
           "达莉娅群娱插件，60+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
-          "v2.0.0")
+          "v2.0.1")
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -27,10 +27,11 @@ class CompEntertainment(Star):
         self.menu_path = "./data/plugins/menu_output.png"
         self.hashfile = "./data/plugins/menu.json"
         self.file_path = './data/plugins/vitsrooms.jsonl'
+        self.tts_path = './data/plugins/ttsrooms.jsonl'
         self.ddzpath = './data/plugins/data.jsonl'
         self.song_name = None
         # 菜单配置
-        self.version = '200'
+        self.version = '201'
         self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
@@ -40,15 +41,15 @@ class CompEntertainment(Star):
         self.load()
         # TTS配置
         self.model = '梅琳娜'
-        self.opsss = False
-        self.flag2 = True
+        self.ttsrooms = []
+        self.flag2 = False
         self.flag = False
-        if not os.path.exists(self.file_path):
-            self.save_rooms()
-            print(f"文件 {self.file_path} 不存在，已创建并初始化。")
+        if not os.path.exists(self.tts_path):
+            self.save_ttsrooms()
+            print(f"文件 {self.tts_path} 不存在，已创建并初始化。")
         else:
-            print(f"文件 {self.file_path} 已存在，跳过创建。")
-        self.load_rooms()
+            print(f"文件 {self.tts_path} 已存在，跳过创建。")
+        self.load_ttsrooms()
         # ddz配置
         self.rooms = {}  # {room_id: game}
         self.player_rooms = {}  # {player_id: room_id}
@@ -61,7 +62,13 @@ class CompEntertainment(Star):
         # 人工智障配置
         self.vitsrooms = []
         self.allowed_groups = self._load_allowed_groups()
-        self.last_message_time: Dict[str, Dict[str, float]] = {}  # {group_id: {user_id: timestamp}}
+        self.last_message_time: Dict[str, Dict[str, float]] = {}
+        if not os.path.exists(self.file_path):
+            self.save_rooms()
+            print(f"文件 {self.file_path} 不存在，已创建并初始化。")
+        else:
+            print(f"文件 {self.file_path} 已存在，跳过创建。")
+        self.load_rooms()
     '''菜单功能部分'''
 
     @filter.command("菜单")
@@ -562,38 +569,50 @@ class CompEntertainment(Star):
         await ai_make.process_group_buffer(group_id)
 
     '''TTS功能部分'''
-
+    @filter.command("TTS")
+    async def tts_switch(self, event: AstrMessageEvent):
+        room = event.get_group_id()
+        chain1 = [Plain(f"本群TTS启动（仅限本群）"),Face(id=337)]
+        chain2 = [Plain(f"本群TTS关闭（仅限本群）"),Face(id=337)]
+        if room in self.ttsrooms:
+            self.ttsrooms.remove(room)
+            self.save_ttsrooms()
+            yield event.chain_result(chain2)
+        else:
+            self.ttsrooms.append(room)
+            self.save_ttsrooms()
+            yield event.chain_result(chain1)
     @filter.on_decorating_result(priority=100)
     async def voice(self, event: AstrMessageEvent):
         result = event.get_result()
+        room = event.get_group_id()
         texts = result.get_plain_text()
         res = MessageChain()
         res.chain = result.chain
         adapter_name = event.get_platform_name()
-        if  not self.opsss:
-            return
-        if adapter_name == "qq_official":
-            logger.info("检测为官方机器人，自动忽略转语音请求")
-            return
-        if not result.chain:
-            logger.info(f"返回消息为空,pass")
-            return
-        if not result.is_llm_result():
-            logger.info(f"非LLM消息,pass")
-            return
-        if self.flag:
-            await event.send(res)
-        logger.info(f"LLM返回的文本是：{texts}")
-        result.chain.remove(Plain(texts))
-        if self.flag2:
-            texts = await text.remove_complex_emoticons(texts)
-            logger.info(f"过滤颜表情后的文本是：{texts}")
-        text_chunks = [texts[i:i + 200] for i in range(0, len(texts), 200)]
-        for chunk in text_chunks:
-            det = await music.generate_voice(chunk,self.model)
-            voice = MessageChain()
-            voice.chain.append(Record.fromURL(det))
-            await event.send(voice)
+        if room in self.vitsrooms:
+            if adapter_name == "qq_official":
+                logger.info("检测为官方机器人，自动忽略转语音请求")
+                return
+            if not result.chain:
+                logger.info(f"返回消息为空,pass")
+                return
+            if not result.is_llm_result():
+                logger.info(f"非LLM消息,pass")
+                return
+            if self.flag:
+                await event.send(res)
+            logger.info(f"LLM返回的文本是：{texts}")
+            result.chain.remove(Plain(texts))
+            if self.flag2:
+                texts = await text.remove_complex_emoticons(texts)
+                logger.info(f"过滤颜表情后的文本是：{texts}")
+            text_chunks = [texts[i:i + 200] for i in range(0, len(texts), 200)]
+            for chunk in text_chunks:
+                det = await music.generate_voice(chunk,self.model)
+                voice = MessageChain()
+                voice.chain.append(Record.fromURL(det))
+                await event.send(voice)
 
 
     @filter.command("切换音色")
@@ -636,16 +655,22 @@ class CompEntertainment(Star):
         else:
             yield event.chain_result(chain2)
 
-    @filter.command("TTS")
-    async def switch2(self, event: AstrMessageEvent):
-        chain1 = [Plain(f"TTS启动"),Face(id=337)]
-        chain2 = [Plain(f"TTS关闭"),Face(id=337)]
-        self.opsss = not self.opsss
-        if self.opsss:
-            yield event.chain_result(chain1)
+    def load_ttsrooms(self):
+        dicts = []
+        with open(self.tts_path, 'r') as f:
+            for line in f:
+                dicts.append(json.loads(line.strip()))
+        # 分配到各自的字典
+        if not dicts:  # 如果 dicts 为空
+            logger.warning("加载的数据为空")
+            return
         else:
-            yield event.chain_result(chain2)
+            self.ttsrooms = dicts[0]
+            return
 
+    def save_ttsrooms(self):
+        with open(self.tts_path, 'w') as f:
+            f.write(json.dumps(self.ttsrooms) + '\n')
 
     def load_rooms(self):
         dicts = []
