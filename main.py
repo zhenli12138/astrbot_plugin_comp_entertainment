@@ -590,7 +590,7 @@ class CompEntertainment(Star):
             logger.info(f"过滤颜表情后的文本是：{texts}")
         text_chunks = [texts[i:i + 200] for i in range(0, len(texts), 200)]
         for chunk in text_chunks:
-            result = await music.generate_voice(chunk,"梅琳娜")
+            result = await music.generate_voice(chunk,self.model)
             await event.send(result)
 
     @filter.command("切换音色")
@@ -609,14 +609,7 @@ class CompEntertainment(Star):
 
         # 更新 model 并切换状态
         self.model = model
-        self.flag2 = not self.flag2
-
-        # 构建响应消息
-        if self.flag2:
-            response = [Plain(f"【{model}】音色过滤已启动"), Face(id=337)]  # 337 是笑脸
-        else:
-            response = [Plain(f"【{model}】音色过滤已关闭"), Face(id=333)]  # 333 是无奈脸
-
+        response = [Plain(f"【{model}】音色已成功切换"), Face(id=337)]  # 337 是笑脸
         yield event.chain_result(response)
 
     @filter.command("filter")
@@ -640,7 +633,7 @@ class CompEntertainment(Star):
         else:
             yield event.chain_result(chain2)
 
-    @filter.command("gg")
+    @filter.command("TTS")
     async def switch2(self, event: AstrMessageEvent):
         chain1 = [Plain(f"TTS启动"),Face(id=337)]
         chain2 = [Plain(f"TTS关闭"),Face(id=337)]
