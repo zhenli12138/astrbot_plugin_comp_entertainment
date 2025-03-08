@@ -18,8 +18,8 @@ BUFFER_LIMIT = 2  # 一问一答的对话对数量
 MERGE_TIMEOUT = 60  # 同一用户消息合并时间窗口（秒）
 
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
-          "达莉娅群娱插件，50+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
-          "v1.9.8")
+          "达莉娅群娱插件，60+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
+          "v2.0.0")
 class CompEntertainment(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -30,7 +30,7 @@ class CompEntertainment(Star):
         self.ddzpath = './data/plugins/data.jsonl'
         self.song_name = None
         # 菜单配置
-        self.version = '199'
+        self.version = '200'
         self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
@@ -597,7 +597,7 @@ class CompEntertainment(Star):
 
 
     @filter.command("切换音色")
-    async def filter_switch(self, event: AstrMessageEvent, model):
+    async def filter_switch(self, event: AstrMessageEvent, model:str):
         # 允许切换的音色列表
         allowed_models = [
             "孙笑川", "东雪莲", "玛莲妮亚", "菈妮", "梅琳娜", "蒙葛特",
