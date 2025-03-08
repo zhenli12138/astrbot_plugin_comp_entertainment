@@ -597,7 +597,7 @@ class CompEntertainment(Star):
 
 
     @filter.command("切换音色")
-    async def filter_switch(self, event: AstrMessageEvent, model:str):
+    async def timbre_switch(self, event: AstrMessageEvent, model:str):
         # 允许切换的音色列表
         allowed_models = [
             "孙笑川", "东雪莲", "玛莲妮亚", "菈妮", "梅琳娜", "蒙葛特",
