@@ -2,6 +2,41 @@ from astrbot.api.all import *
 import requests
 from typing import Optional
 import aiohttp
+import aiohttp
+import asyncio
+
+
+async def take_screenshot(url:str,element_selector:str,branch:str):
+    # 定义请求参数（与原始代码相同）
+    payload = {
+        "url": url,
+        "element_selector": element_selector,
+        "scroll_retry": 3,
+        "branch": branch
+    }
+
+    async with aiohttp.ClientSession() as session:
+        try:
+            # 发送异步 POST 请求
+            async with session.post(
+                    "http://116.62.188.107:7100/screenshot",
+                    json=payload
+            ) as response:
+
+                # 处理响应
+                if response.status == 200:
+                    data = await response.json()
+                    original_url = data["image_url"]
+                    new_url = original_url.replace("localhost", "116.62.188.107")
+                    print(new_url)
+                    return new_url
+                else:
+                    print("请求失败，状态码：", response.status)
+                    error_text = await response.text()
+                    print("错误信息：", error_text)
+
+        except aiohttp.ClientError as e:
+            print("请求发生错误:", str(e))
 
 async def get_random_genshin_cosplay():
     url = "https://v2.xxapi.cn/api/yscos"

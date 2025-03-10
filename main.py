@@ -5,7 +5,7 @@ import os
 import json
 from astrbot.api.provider import ProviderRequest
 from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import AiocqhttpMessageEvent
-from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz, deer, ai_make
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz, deer, ai_make, lol
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,text, search
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music,chess, blue_archive
@@ -85,7 +85,17 @@ class CompEntertainment(Star):
         await event.send(result)
 
     '''API功能部分'''
-
+    @filter.command("LOL英雄查询")
+    async def screenshot0(self, event: AstrMessageEvent,name:str,branch:Optional[str]=None):
+        hero_name = lol.chinese_to_english(name)
+        url = f"https://www.op.gg/champions/{hero_name}/build"
+        element_selector = "#content-container"
+        result_url = await image.take_screenshot(url, element_selector, branch)
+        result = MessageChain()
+        result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
+        await event.send(result)
+        result.chain = [Plain(f"🌐获取数据成功，以下为{name}的资料"),Image.fromURL(result_url)]
+        await event.send(result)
     @filter.command("光遇任务")
     async def trap0(self, event: AstrMessageEvent):
         result = await search.fetch_daily_tasks()
