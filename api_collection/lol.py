@@ -24,7 +24,7 @@ def chinese_to_english(chinese_input):
     死亡颂唱者 - 卡尔萨斯 - Karthus
     符文法师 - 瑞兹 - Ryze
     蛮族之王 - 泰达米尔 - Tryndamere
-    祖安狂人 - 蒙多 - Dr. Mundo
+    祖安狂人 - 蒙多 - drmundo
     远古巫灵 - 泽拉斯 - Xerath
     法外狂徒 - 格莱弗斯 - Graves
     爆破鬼才 - 吉格斯 - Ziggs
