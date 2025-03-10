@@ -90,10 +90,10 @@ class CompEntertainment(Star):
         hero_name = lol.chinese_to_english(name)
         url = f"https://www.op.gg/champions/{hero_name}/build"
         element_selector = "#content-container"
-        result_url = await image.take_screenshot(url, element_selector, branch)
         result = MessageChain()
         result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
         await event.send(result)
+        result_url = await image.take_screenshot(url, element_selector, branch)
         result.chain = [Plain(f"🌐获取数据成功，以下为{name}的资料"),Image.fromURL(result_url)]
         await event.send(result)
     @filter.command("光遇任务")
