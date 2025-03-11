@@ -85,6 +85,46 @@ class CompEntertainment(Star):
         await event.send(result)
 
     '''API功能部分'''
+    @filter.command("csgo赛事")
+    async def screenshot4(self, event: AstrMessageEvent,branch:Optional[str]=None):
+        url = f"https://event.5eplay.com/csgo/teams"
+        element_selector = "#app"
+        result = MessageChain()
+        result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
+        await event.send(result)
+        result_url = await image.take_screenshot(url, element_selector, branch)
+        result.chain = [Plain(f"🌐获取数据成功，以下为csgo赛事资料"),Image.fromURL(result_url)]
+        await event.send(result)
+    @filter.command("csgo战队")
+    async def screenshot3(self, event: AstrMessageEvent,branch:Optional[str]=None):
+        url = f"https://event.5eplay.com/csgo/teams"
+        element_selector = "#app"
+        result = MessageChain()
+        result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
+        await event.send(result)
+        result_url = await image.take_screenshot(url, element_selector, branch)
+        result.chain = [Plain(f"🌐获取数据成功，以下为csgo战队资料"),Image.fromURL(result_url)]
+        await event.send(result)
+    @filter.command("csgo选手")
+    async def screenshot2(self, event: AstrMessageEvent,branch:Optional[str]=None):
+        url = f"https://event.5eplay.com/csgo/player"
+        element_selector = "#app"
+        result = MessageChain()
+        result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
+        await event.send(result)
+        result_url = await image.take_screenshot(url, element_selector, branch)
+        result.chain = [Plain(f"🌐获取数据成功，以下为csgo选手资料"),Image.fromURL(result_url)]
+        await event.send(result)
+    @filter.command("csgo赛程")
+    async def screenshot1(self, event: AstrMessageEvent,branch:Optional[str]=None):
+        url = f"https://event.5eplay.com/csgo/matches"
+        element_selector = "#app"
+        result = MessageChain()
+        result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
+        await event.send(result)
+        result_url = await image.take_screenshot(url, element_selector, branch)
+        result.chain = [Plain(f"🌐获取数据成功，以下为csgo赛程资料"),Image.fromURL(result_url)]
+        await event.send(result)
     @filter.command("LOL英雄查询")
     async def screenshot0(self, event: AstrMessageEvent,name:str,branch:Optional[str]=None):
         hero_name = lol.chinese_to_english(name)
