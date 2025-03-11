@@ -87,7 +87,7 @@ class CompEntertainment(Star):
     '''API功能部分'''
     @filter.command("csgo赛事")
     async def screenshot4(self, event: AstrMessageEvent,branch:Optional[str]=None):
-        url = f"https://event.5eplay.com/csgo/teams"
+        url = f"https://event.5eplay.com/csgo/events"
         element_selector = "#app"
         result = MessageChain()
         result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
