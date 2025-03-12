@@ -26,8 +26,9 @@ class CompEntertainment(Star):
         self.horse_race = horse.RaceHorse()
         self.song_name = None
         # 文件路径配置
-        self.ALLOWED_GROUPS_FILE = Path("./data/plugins/allowed_groups.jsonl")
         self.menu_path = "./data/plugins/menu_output.png"
+        self.horse_path = "./data/plugins/horse.menu.png"
+        self.ALLOWED_GROUPS_FILE = Path("./data/plugins/allowed_groups.jsonl")
         self.hashfile = "./data/plugins/menu.json"
         self.file_path = './data/plugins/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/data.jsonl'
@@ -72,8 +73,11 @@ class CompEntertainment(Star):
         if new_hashs != self.hashs:
             self.hashs = new_hashs
             self.save()
-            result = await api.get_menu(self.menu_path)
+            result = await pilcreate.get_menu(self.menu_path)
         else:
+            if not os.path.exists(self.menu_path):
+                result = await pilcreate.get_menu(self.menu_path)
+                print(f"文件 {self.menu_path} 不存在，已创建并初始化。")
             result = MessageChain()
             result.chain = []
             result.chain = [Image.fromFileSystem(self.menu_path)]
@@ -405,7 +409,10 @@ class CompEntertainment(Star):
     '''赛马功能部分'''
     @filter.command("赛马菜单")
     async def cmd_help(self, event: AstrMessageEvent):
-        await horse.RaceHorse.cmd_help(self.horse_race, event)
+        if not os.path.exists(self.horse_path):
+            await pilcreate.horse_menu(self.horse_path)
+            print(f"文件 {self.horse_path} 不存在，已创建并初始化。")
+        await horse.RaceHorse.cmd_help(self.horse_race, event,self.horse_path)
     @filter.command("赛马")
     async def cmd_race(self, event: AstrMessageEvent):
         await horse.RaceHorse.cmd_race(self.horse_race,event)

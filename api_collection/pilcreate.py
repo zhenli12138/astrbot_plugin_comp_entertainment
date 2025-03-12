@@ -12,6 +12,32 @@ class Poker:
               '♦': (255, 0, 0), '♣': (0, 0, 0)}
 from PIL import Image, ImageDraw, ImageFont
 
+async def get_menu(menu_path):
+    # API地址
+    api_url = "http://116.62.188.107:5000/images/menu"
+    result = MessageChain()
+    result.chain = []
+    try:
+        # 使用 aiohttp 发送异步 GET 请求
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api_url) as response:
+                # 检查请求是否成功
+                if response.status == 200:
+                    # 读取图片内容
+                    image_data = await response.read()
+                    # 将图片保存到本地
+                    with open(menu_path, "wb") as file:
+                        file.write(image_data)
+                    # 构造返回结果
+                    result.chain = [Image.fromFileSystem(menu_path)]
+                    return result
+                else:
+                    result.chain = [Plain("请求失败，状态码: {response.status}")]
+                    return result
+    except aiohttp.ClientError as e:
+        result.chain = [Plain(f"请求异常: {e}")]
+        return result
+
 async def generate_menu():
     background_image_path = './data/plugins/astrbot_plugin_comp_entertainment/background.jpg'
     font = ImageFont.truetype('./data/plugins/astrbot_plugin_comp_entertainment/msyh.ttf', 28)
@@ -307,7 +333,7 @@ async def render_sign_in_calendar(record: Dict, year: int, month: int, user_name
     image.save(save_path, format="PNG")
     return save_path
 
-async def horse_menu() -> str:
+async def horse_menu(path) -> str:
     """
     渲染排行榜并返回图片的 URL。
     使用外部 API 将 HTML 模板渲染为图片。
@@ -449,15 +475,6 @@ async def horse_menu() -> str:
                     "http://116.62.188.107:8000/render",
                     json=payload
             ) as response:
-                # 强制检查HTTP状态码
-                try:
-                    response.raise_for_status()
-                except aiohttp.ClientResponseError as e:
-                    print(f"HTTP错误！状态码: {e.status}")
-                    print(f"响应头: {dict(e.headers)}")
-                    error_body = await response.text()
-                    print(f"错误响应体: {error_body[:500]}")  # 截取前500字符避免过载
-                    raise
 
                 # 解析响应内容
                 try:
@@ -466,8 +483,6 @@ async def horse_menu() -> str:
                     raw_response = await response.text()
                     print(f"无效的JSON响应！原始内容: {raw_response[:500]}")
                     raise
-
-                print("调试信息 - 完整服务器响应:", data)  # 重要调试点
 
                 # 检查关键字段
                 if 'url' not in data:
@@ -478,6 +493,7 @@ async def horse_menu() -> str:
                     else:
                         raise KeyError("响应中缺少'url'字段，且无错误信息")
 
+                await download_images(data['url'],path)
                 return data['url']
 
     except aiohttp.ClientError as e:
@@ -486,3 +502,29 @@ async def horse_menu() -> str:
     except Exception as e:
         print(f"未知错误: {str(e)}")
         return f"error: {str(e)}"
+
+async def download_images(url: str, save_path: str):
+    """
+    异步下载单个图片
+    :param session: aiohttp客户端会话
+    :param url: 图片URL地址
+    :param save_path: 本地保存路径（包含文件名）
+    """
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    # 确保目录存在
+                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                    # 写入文件
+                    with open(save_path, 'wb') as f:
+                        while True:
+                            chunk = await response.content.read(1024)
+                            if not chunk:
+                                break
+                            f.write(chunk)
+                    print(f"下载成功: {url} -> {save_path}")
+                else:
+                    print(f"下载失败: {url} - HTTP状态码 {response.status}")
+    except Exception as e:
+        print(f"下载出错: {url} - {str(e)}")
