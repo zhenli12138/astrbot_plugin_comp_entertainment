@@ -73,10 +73,13 @@ class CompEntertainment(Star):
         if new_hashs != self.hashs:
             self.hashs = new_hashs
             self.save()
-            result = await pilcreate.get_menu(self.menu_path)
+            await pilcreate.get_menu(self.menu_path)
+            result = MessageChain()
+            result.chain = []
+            result.chain = [Image.fromFileSystem(self.menu_path)]
         else:
             if not os.path.exists(self.menu_path):
-                result = await pilcreate.get_menu(self.menu_path)
+                await pilcreate.get_menu(self.menu_path)
                 print(f"文件 {self.menu_path} 不存在，已创建并初始化。")
             result = MessageChain()
             result.chain = []

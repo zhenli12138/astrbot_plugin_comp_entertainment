@@ -577,12 +577,10 @@ class RaceHorse:
         result.chain = [Plain("以下是对道具的使用价格和描述:\n\n使用道具请发送指令：赛马道具 道具名 目标\n\n" + available)]
         await event.send(result)
 
-    async def cmd_help(self, event: AstrMessageEvent,url):
+    async def cmd_help(self, event: AstrMessageEvent,path):
         """介绍赛马游戏玩法"""
-        #url = await render_leaderboard()
-        horse_menu
         result = MessageChain()
-        result.chain = [Image.fromFileSystem(url)]
+        result.chain = [Image.fromFileSystem(path)]
         await event.send(result)
 
     # 道具列表

@@ -15,8 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 async def get_menu(menu_path):
     # API地址
     api_url = "http://116.62.188.107:5000/images/menu"
-    result = MessageChain()
-    result.chain = []
+
     try:
         # 使用 aiohttp 发送异步 GET 请求
         async with aiohttp.ClientSession() as session:
@@ -29,14 +28,11 @@ async def get_menu(menu_path):
                     with open(menu_path, "wb") as file:
                         file.write(image_data)
                     # 构造返回结果
-                    result.chain = [Image.fromFileSystem(menu_path)]
-                    return result
+                    return
                 else:
-                    result.chain = [Plain("请求失败，状态码: {response.status}")]
-                    return result
+                    return
     except aiohttp.ClientError as e:
-        result.chain = [Plain(f"请求异常: {e}")]
-        return result
+        return
 
 async def generate_menu():
     background_image_path = './data/plugins/astrbot_plugin_comp_entertainment/background.jpg'
