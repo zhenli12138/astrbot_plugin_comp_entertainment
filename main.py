@@ -18,7 +18,7 @@ MERGE_TIMEOUT = 60  # 同一用户消息合并时间窗口（秒）
 
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
           "达莉娅群娱插件，60+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
-          "v2.1.5")
+          "v2.1.6")
 class CompEntertainment(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -32,7 +32,7 @@ class CompEntertainment(Star):
         self.file_path = './data/plugins/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/data.jsonl'
         # 菜单配置
-        self.version = '215'
+        self.version = '216'
         self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
@@ -89,7 +89,7 @@ class CompEntertainment(Star):
     @filter.command("csgo赛事")
     async def screenshot4(self, event: AstrMessageEvent,branch:Optional[str]=None):
         url = f"https://event.5eplay.com/csgo/events"
-        element_selector = "#app"
+        element_selector = None
         result = MessageChain()
         result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
         await event.send(result)
@@ -99,7 +99,7 @@ class CompEntertainment(Star):
     @filter.command("csgo战队")
     async def screenshot3(self, event: AstrMessageEvent,branch:Optional[str]=None):
         url = f"https://event.5eplay.com/csgo/teams"
-        element_selector = "#app"
+        element_selector = None
         result = MessageChain()
         result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
         await event.send(result)
@@ -109,7 +109,7 @@ class CompEntertainment(Star):
     @filter.command("csgo选手")
     async def screenshot2(self, event: AstrMessageEvent,branch:Optional[str]=None):
         url = f"https://event.5eplay.com/csgo/player"
-        element_selector = "#app"
+        element_selector = None
         result = MessageChain()
         result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
         await event.send(result)
@@ -119,7 +119,7 @@ class CompEntertainment(Star):
     @filter.command("csgo赛程")
     async def screenshot1(self, event: AstrMessageEvent,branch:Optional[str]=None):
         url = f"https://event.5eplay.com/csgo/matches"
-        element_selector = "#app"
+        element_selector = None
         result = MessageChain()
         result.chain = [Plain("🔍服务端正在搜索，首次检索时间较长请稍后")]
         await event.send(result)

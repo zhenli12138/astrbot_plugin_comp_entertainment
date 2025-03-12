@@ -6,7 +6,7 @@ import aiohttp
 import asyncio
 
 
-async def take_screenshot(url:str,element_selector:str,branch:str):
+async def take_screenshot(url:str,element_selector:Optional[str]=None,branch:Optional[str]=None):
     # 定义请求参数（与原始代码相同）
     payload = {
         "url": url,
