@@ -137,10 +137,16 @@ class RaceHorse:
         group_id = event.message_obj.group_id if event.message_obj.group_id else "10000"
         guild_data = await self.get_guild_data(group_id)
         if guild_data["isPlay"]:
-            yield event.plain_result("游戏已经在进行" if group_id != "10000" else "游戏已经在别的私聊会话中进行，请等待")
+            result = "游戏已经在进行" if group_id != "10000" else "游戏已经在别的私聊会话中进行，请等待"
+            message = MessageChain()
+            message.chain = [Plain(result)]
+            await event.send(message)
             return
         guild_data["waitingPlay"] = True
-        yield event.plain_result("赛🐎 要开始了，可在开始之前选择其中 1-6 号🐎，指令为: 押 <马匹号> <金额> 去选择对应的马匹吧~")
+        result = "赛🐎 要开始了，可在开始之前选择其中 1-6 号🐎，指令为: 押 <马匹号> <金额> 去选择对应的马匹吧~"
+        message = MessageChain()
+        message.chain = [Plain(result)]
+        await event.send(message)
 
     async def cmd_balance(self, event: AstrMessageEvent):
         """查看当前余额"""
@@ -149,56 +155,81 @@ class RaceHorse:
         if not user_data:
             num = await self.random_int(20, 100)
             await self.database.update_user(user_id, {"value": num})
-            yield event.plain_result(f"您可能是首次使用押功能，已给予您初始金额: {num} {self.config.get('currency', '润币')}~")
+            result = f"您可能是首次使用押功能，已给予您初始金额: {num} {self.config.get('currency', '润币')}~"
+            message = MessageChain()
+            message.chain = [Plain(result)]
+            await event.send(message)
             return
         balance = user_data.get("value", 0)
         identity = self.check_identity(balance)["name"]
-        yield event.plain_result(f"您当前{self.config.get('currency', '润币')}为：{balance} 点数。属于 {identity} 级别")
+        result = f"您当前{self.config.get('currency', '润币')}为：{balance} 点数。属于 {identity} 级别"
+        message = MessageChain()
+        message.chain = [Plain(result)]
+        await event.send(message)
         if balance <= 5:
             num = await self.random_int(5, 10)
             await self.database.update_user(user_id, {"value": balance + num})
-            yield event.plain_result(f"啊咧，似乎查看余额的时候发现只有{balance}个{self.config.get('currency', '润币')}了吗... \n真是杂鱼大叔呢~❤️ 这次就再给你 {num} {self.config.get('currency', '润币')}吧~")
-            await asyncio.sleep(0.5)
-            yield event.plain_result("一定要塔塔开啊！")
+            result = f"啊咧，似乎查看余额的时候发现只有{balance}个{self.config.get('currency', '润币')}了吗... \n真是杂鱼大叔呢~❤️ 这次就再给你 {num} {self.config.get('currency', '润币')}吧~"
+            message = MessageChain()
+            message.chain = [Plain(result)]
+            await event.send(message)
 
     async def cmd_bet(self, event: AstrMessageEvent, goal: int, currency: int):
         """下注命令：押 <马匹号> <金额>"""
         group_id = event.message_obj.group_id if event.message_obj.group_id else "10000"
         guild_data = await self.get_guild_data(group_id)
         user_id = event.get_sender_id()
+        message = MessageChain()
         if not guild_data["waitingPlay"]:
-            yield event.plain_result("游戏还没开始")
+            result = "游戏还没开始"
+            message.chain = [Plain(result)]
+            await event.send(message)
             return
         if user_id in guild_data["participant"]:
-            yield event.plain_result("您已选择对应马匹，不要重复选择哦~")
+            result = "您已选择对应马匹，不要重复选择哦~"
+            message.chain = [Plain(result)]
+            await event.send(message)
             return
         horse = goal
         money = currency
         if horse > 6 or horse <= 0:
-            yield event.plain_result("您选的马匹号码有误")
+            result = "您选的马匹号码有误"
+            message.chain = [Plain(result)]
+            await event.send(message)
             return
         if money < 0 or money > self.config.get("betMax", 70):
-            yield event.plain_result(f"押的金额过大或者过小。目前限制在 {self.config.get('betMax', 70)} 以内")
+            result = f"押的金额过大或者过小。目前限制在 {self.config.get('betMax', 70)} 以内"
+            message.chain = [Plain(result)]
+            await event.send(message)
             return
         user_data = await self.database.get_user(user_id)
         if not user_data or user_data.get("value", 0) < money:
-            yield event.plain_result("选择马匹失败，可能原因：额度不够")
+            result = "选择马匹失败，可能原因：额度不够"
+            message.chain = [Plain(result)]
+            await event.send(message)
             return
         # 扣除下注金额
         new_balance = user_data.get("value", 0) - money
         await self.database.update_user(user_id, {"value": new_balance})
         guild_data["participant"][user_id] = {"pay": money, "select": horse}
-        yield event.plain_result(f"您已选择{horse}号马，你的id为：{user_id}，选择的额度为：{money}{self.config.get('currency', '润币')}")
+        result = f"您已选择{horse}号马，你的id为：{user_id}，选择的额度为：{money}{self.config.get('currency', '润币')}"
+        message.chain = [Plain(result)]
+        await event.send(message)
 
     async def cmd_start_race(self, event: AstrMessageEvent):
         """开始赛马，实时更新赛况"""
         group_id = event.message_obj.group_id if event.message_obj.group_id else "10000"
         guild_data = await self.get_guild_data(group_id)
+        message = MessageChain()
         if not guild_data["waitingPlay"]:
-            yield event.plain_result("还没准备呢，请先输入指令：赛马")
+            result = "还没准备呢，请先输入指令：赛马"
+            message.chain = [Plain(result)]
+            await event.send(message)
             return
         if guild_data["isPlay"]:
-            yield event.plain_result("当前正在游玩赛马，请等待结束~")
+            result = "当前正在游玩赛马，请等待结束~"
+            message.chain = [Plain(result)]
+            await event.send(message)
             return
         guild_data["waitingPlay"] = False
         guild_data["isPlay"] = True
@@ -362,7 +393,9 @@ class RaceHorse:
             guild_data["speed"] = [-sp for sp in guild_data["speed"]]
             guild_data["isBack"] = False
 
-        yield event.plain_result("马儿开始跑了!")
+        result = "马儿开始跑了!"
+        message.chain = [Plain(result)]
+        await event.send(message)
 
         async def race_loop():
             try:
@@ -426,7 +459,9 @@ class RaceHorse:
         group_id = event.message_obj.group_id if event.message_obj.group_id else "10000"
         guild_data = await self.get_guild_data(group_id)
         if not guild_data["isPlay"] and not guild_data["waitingPlay"]:
-            yield event.plain_result("还没开始呢")
+            result = MessageChain()
+            result.chain = [Plain("还没开始呢")]
+            await event.send(result)
             return
 
         async def come_back_pay_sum():
@@ -454,20 +489,25 @@ class RaceHorse:
         guild_data["isPlay"] = False
         guild_data["participant"].clear()
         guild_data["waitingPlay"] = False
-        yield event.plain_result("已结束")
+        result = MessageChain()
+        result.chain = [Plain("已结束")]
+        await event.send(result)
 
     async def cmd_prop(self, event: AstrMessageEvent):
         """使用赛马道具干扰或辅助赛事"""
         group_id = event.message_obj.group_id if event.message_obj.group_id else "10000"
         guild_data = await self.get_guild_data(group_id)
+        result = MessageChain()
         if not guild_data["isPlay"]:
-            yield event.plain_result("似乎还没开始赛马...")
+            result.chain = [Plain("似乎还没开始赛马...")]
+            await event.send(result)
             return
         user_id = event.get_sender_id()
         last_time = guild_data["propTime"].get(user_id, 0)
         now = int(time.time() * 1000)
         if now - last_time < 10000:
-            yield event.plain_result("您使用道具太频繁了，请等待一会")
+            result.chain = [Plain("您使用道具太频繁了，请等待一会")]
+            await event.send(result)
             return
         guild_data["propTime"][user_id] = now
         # 解析指令文本，格式：赛马道具 道具名 目标（目标为数字，下标从1开始）
@@ -475,7 +515,8 @@ class RaceHorse:
         parts = content.split()
         if not parts:
             available = "\n".join([p["name"] for p in self.propList])
-            yield event.plain_result("似乎还没有选择道具，目前存在的道具有：\n" + available)
+            result.chain = [Plain("似乎还没有选择道具，目前存在的道具有：\n" + available)]
+            await event.send(result)
             return
         prop_name = parts[0]
         target = None
@@ -487,23 +528,27 @@ class RaceHorse:
         info = next((p for p in self.propList if p["name"] == prop_name), None)
         if not info:
             available = "\n".join([p["name"] for p in self.propList])
-            yield event.plain_result("道具不存在。目前存在的道具有：\n" + available)
+            result.chain = [Plain("道具不存在。目前存在的道具有：\n" + available)]
+            await event.send(result)
             return
         # 扣除道具费用
         user_data = await self.database.get_user(user_id)
         if not user_data or user_data.get("value", 0) < info["money"]:
-            yield event.plain_result("对目标使用道具失败，可能原因：额度不够")
+            result.chain = [Plain("对目标使用道具失败，可能原因：额度不够")]
+            await event.send(result)
             return
         await self.database.update_user(user_id, {"value": user_data.get("value", 0) - info["money"]})
         # 判断是否成功（依据概率）
         if await self.random_int(0, 11) > info["prob"] * 10:
-            yield event.plain_result(f"您尝试使用了{info['name']}，似乎失败了...")
+            result.chain = [Plain(f"您尝试使用了{info['name']}，似乎失败了...")]
+            await event.send(result)
             return
         # 若存在 trackFun 则随机使某匹马回到起点
         if "trackFun" in info:
             index = await self.random_int(0, len(guild_data["track"]))
             guild_data["track"][index] = 0
-            yield event.plain_result(f"您的{info['name']}选中了{index+1}号🐎;\n{info['msg']}")
+            result.chain = [Plain(f"您的{info['name']}选中了{index+1}号🐎;\n{info['msg']}")]
+            await event.send(result)
             return
         # 若存在 statusFun 则对指定目标生效
         if "statusFun" in info:
@@ -512,20 +557,25 @@ class RaceHorse:
                     guild_data["strandedState"].append({"target": target-1, "type": 2, "time": 5})
                 elif info["statusFun"] == "fried":
                     guild_data["strandedState"].append({"target": target-1, "type": 10, "time": 2})
-                yield event.plain_result(f"您对{target}号🐎使用了道具 {info['name']};\n{info['msg']}")
+                result.chain = [Plain(f"您对{target}号🐎使用了道具 {info['name']};\n{info['msg']}")]
+                await event.send(result)
                 return
             else:
-                yield event.plain_result("您对空气使用了道具，似乎没有选中目标，请确认目标！\n格式为：\n\n赛马道具 道具名 目标下标")
+                result.chain = [Plain("您对空气使用了道具，似乎没有选中目标，请确认目标！\n格式为：\n\n赛马道具 道具名 目标下标")]
+                await event.send(result)
                 return
         # 若为普通直接修改跑道
         if target and 1 <= target <= 6:
             guild_data["track"][target-1] += info["value"]
-            yield event.plain_result(f"你对{target}号马使用了{info['name']};\n{info['msg']}")
+            result.chain = [Plain(f"你对{target}号马使用了{info['name']};\n{info['msg']}")]
+            await event.send(result)
 
     async def cmd_store(self, event: AstrMessageEvent):
         """展示赛马商店中的所有道具信息"""
         available = "\n\n".join([f"[道具名] {p['name']}\n[价格] {p['money']}\n\"{p['info']}\"" for p in self.propList])
-        yield event.plain_result("以下是对道具的使用价格和描述:\n\n使用道具请发送指令：赛马道具 道具名 目标\n\n" + available)
+        result = MessageChain()
+        result.chain = [Plain("以下是对道具的使用价格和描述:\n\n使用道具请发送指令：赛马道具 道具名 目标\n\n" + available)]
+        await event.send(result)
 
     async def cmd_help(self, event: AstrMessageEvent):
         """介绍赛马游戏玩法"""
