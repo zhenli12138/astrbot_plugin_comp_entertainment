@@ -306,3 +306,183 @@ async def render_sign_in_calendar(record: Dict, year: int, month: int, user_name
 
     image.save(save_path, format="PNG")
     return save_path
+
+async def horse_menu() -> str:
+    """
+    渲染排行榜并返回图片的 URL。
+    使用外部 API 将 HTML 模板渲染为图片。
+    """
+    # 定义 HTML 模板
+    TMPL = '''
+    <!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f5dc 0%, #d2b48c 100%);
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .title {
+            text-align: center;
+            color: #8b4513;
+            font-size: 28px;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 3px rgba(0,0,0,0.1);
+        }
+
+        .menu-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #fff7e6;
+            border-radius: 10px;
+            border-left: 5px solid #deb887;
+            transition: transform 0.2s;
+        }
+
+        .menu-section:hover {
+            transform: translateX(10px);
+        }
+
+        .section-title {
+            color: #a0522d;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: "🐎";
+            margin-right: 10px;
+        }
+
+        .command {
+            color: #8b0000;
+            font-weight: bold;
+            background: #ffe4b5;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .highlight {
+            color: #cd853f;
+            font-weight: bold;
+        }
+
+        .divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent 0%, #deb887 50%, transparent 100%);
+            margin: 25px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🏇 赛马大会系统菜单 🏇</h1>
+
+        <div class="menu-section">
+            <div class="section-title">赛马余额</div>
+            <p>🎯 新用户首次游玩请先发这个领钱！</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="menu-section">
+            <div class="section-title">创建比赛</div>
+            <p>📝 创建一场赛马比赛，创建完成后进入下注环节</p>
+        </div>
+
+        <div class="menu-section">
+            <div class="section-title">押注指令</div>
+            <p>🎮 使用 <span class="command">押 &lt;马的序号&gt; &lt;押注金额&gt;</span></p>
+            <p>💰 第一名奖励：<span class="highlight">5倍奖金</span></p>
+            <p>📊 基础胜率：约 <span class="highlight">16%</span></p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="menu-section">
+            <div class="section-title">开始比赛</div>
+            <p>🏁 输入 <span class="command">开始赛马</span> 正式启动赛事</p>
+        </div>
+
+        <div class="menu-section">
+            <div class="section-title">道具系统</div>
+            <p>🎁 使用 <span class="command">赛马道具 &lt;道具名&gt; &lt;马的序号&gt;</span></p>
+            <p>⚡ 在比赛进行中实时干扰赛事进程</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="menu-section">
+            <div class="section-title">赛马商店</div>
+            <p>🛒 查看可用道具列表</p>
+            <p>✨ 通过比赛获得的积分兑换特殊道具</p>
+        </div>
+    </div>
+</body>
+</html>
+    '''
+    render_data = {"key": 1}
+    payload = {
+        "tmpl": TMPL,
+        "render_data": render_data,
+        "width": 800,
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                    "http://116.62.188.107:8000/render",
+                    json=payload
+            ) as response:
+                # 强制检查HTTP状态码
+                try:
+                    response.raise_for_status()
+                except aiohttp.ClientResponseError as e:
+                    print(f"HTTP错误！状态码: {e.status}")
+                    print(f"响应头: {dict(e.headers)}")
+                    error_body = await response.text()
+                    print(f"错误响应体: {error_body[:500]}")  # 截取前500字符避免过载
+                    raise
+
+                # 解析响应内容
+                try:
+                    data = await response.json()
+                except Exception as e:
+                    raw_response = await response.text()
+                    print(f"无效的JSON响应！原始内容: {raw_response[:500]}")
+                    raise
+
+                print("调试信息 - 完整服务器响应:", data)  # 重要调试点
+
+                # 检查关键字段
+                if 'url' not in data:
+                    if 'error' in data:
+                        raise ValueError(f"服务器返回错误: {data['error']}")
+                    elif 'message' in data:
+                        raise ValueError(f"API错误: {data['message']}")
+                    else:
+                        raise KeyError("响应中缺少'url'字段，且无错误信息")
+
+                return data['url']
+
+    except aiohttp.ClientError as e:
+        print(f"网络连接错误: {str(e)}")
+        return "error: 无法连接渲染服务器"
+    except Exception as e:
+        print(f"未知错误: {str(e)}")
+        return f"error: {str(e)}"

@@ -5,7 +5,7 @@ import os
 import json
 from astrbot.api.provider import ProviderRequest
 from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import AiocqhttpMessageEvent
-from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz, deer, ai_make, lol
+from data.plugins.astrbot_plugin_comp_entertainment.api_collection import daliya, ddz, deer, ai_make, lol, horse
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import pilcreate
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import api,emoji,image,text, search
 from data.plugins.astrbot_plugin_comp_entertainment.api_collection import video, music,chess, blue_archive
@@ -18,11 +18,12 @@ MERGE_TIMEOUT = 60  # 同一用户消息合并时间窗口（秒）
 
 @register("astrbot_plugin_comp_entertainment", "达莉娅",
           "达莉娅群娱插件，60+超多功能集成调用插件，持续更新中，发【菜单】看菜单",
-          "v2.1.0")
+          "v2.1.5")
 class CompEntertainment(Star):
-    def __init__(self, context: Context, config: dict):
+    def __init__(self, context: Context):
         super().__init__(context)
         self.deerpipe = deer.Deer()
+        self.horse_race = horse.RaceHorse()
         self.song_name = None
         # 文件路径配置
         self.ALLOWED_GROUPS_FILE = Path("./data/plugins/allowed_groups.jsonl")
@@ -31,7 +32,7 @@ class CompEntertainment(Star):
         self.file_path = './data/plugins/vitsrooms.jsonl'
         self.ddzpath = './data/plugins/data.jsonl'
         # 菜单配置
-        self.version = '210'
+        self.version = '215'
         self.hashs = ''
         if not os.path.exists(self.hashfile):
             self.save()
@@ -401,6 +402,31 @@ class CompEntertainment(Star):
         data = await emoji.fetch_image(ids, "点赞")
         await event.send(data)
 
+    '''赛马功能部分'''
+    @filter.command("赛马菜单")
+    async def cmd_help(self, event: AstrMessageEvent):
+        await horse.RaceHorse.cmd_help(self.horse_race, event)
+    @filter.command("赛马")
+    async def cmd_race(self, event: AstrMessageEvent):
+        await horse.RaceHorse.cmd_race(self.horse_race,event)
+    @filter.command("赛马余额")
+    async def cmd_balance(self, event: AstrMessageEvent):
+        await horse.RaceHorse.cmd_balance(self.horse_race, event)
+    @filter.command("押")
+    async def cmd_bet(self, event: AstrMessageEvent, goal: int, currency: int):
+        await horse.RaceHorse.cmd_bet(self.horse_race,event,goal,currency)
+    @filter.command("开始赛马")
+    async def cmd_start_race(self, event: AstrMessageEvent):
+        await horse.RaceHorse.cmd_start_race(self.horse_race, event)
+    @filter.command("结束赛马")
+    async def cmd_end_race(self, event: AstrMessageEvent):
+        await horse.RaceHorse.cmd_end_race(self.horse_race, event)
+    @filter.command("赛马道具")
+    async def cmd_prop(self, event: AstrMessageEvent):
+        await horse.RaceHorse.cmd_prop(self.horse_race, event)
+    @filter.command("赛马商店")
+    async def cmd_store(self, event: AstrMessageEvent):
+        await horse.RaceHorse.cmd_store(self.horse_race, event)
     '''鹿管功能部分'''
 
     @filter.command("钱包")

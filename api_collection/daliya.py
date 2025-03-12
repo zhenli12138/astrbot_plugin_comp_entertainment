@@ -5,6 +5,23 @@ from astrbot.api.message_components import Plain, Image, Record, At, Node, Nodes
 from astrbot.api.message_components import Node, Plain, Image
 from astrbot.core.platform.sources.aiocqhttp.aiocqhttp_message_event import AiocqhttpMessageEvent
 
+async def send_group_msg(event: AstrMessageEvent,group_id,texts:str):
+    if event.get_platform_name() == "aiocqhttp":
+        # qq
+        client = event.bot  # 得到 client
+        payloads = {
+            "group_id": group_id,
+            "message": [
+                {
+                    "type": "text",
+                    "data": {
+                        "text": texts
+                    }
+                }
+            ]
+        }
+        await client.api.call_action('send_group_msg', **payloads)  # 调用 协议端  API
+        return
 
 async def get_name(event: AstrMessageEvent,ids:str):
     if event.get_platform_name() == "aiocqhttp":
